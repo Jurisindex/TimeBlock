@@ -37,14 +37,14 @@ android {
     kotlinOptions {
         jvmTarget = "17"
         freeCompilerArgs = freeCompilerArgs + listOf(
-            "-opt-in=kotlin.RequiresOptIn"  // Replace -Xopt-in with -opt-in
+            "-opt-in=kotlin.RequiresOptIn"
         )
     }
     buildFeatures {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.9"
+        kotlinCompilerExtensionVersion = "1.5.8" // Downgraded to match Kotlin 1.9.22
     }
     packaging {
         resources {
@@ -54,12 +54,16 @@ android {
 }
 
 dependencies {
-    //The room (sqlite wrapper)
-    val roomVersion = "2.6.1" // Use latest version
+    // The room (sqlite wrapper)
+    val roomVersion = "2.6.1"
     implementation("androidx.room:room-runtime:$roomVersion")
     testImplementation("androidx.room:room-testing:$roomVersion")
     ksp("androidx.room:room-compiler:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
+
+    // Explicitly add animation dependencies with the same version as other Compose components
+    implementation(libs.androidx.compose.animation)
+    implementation(libs.androidx.compose.animation.core)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -124,7 +128,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
     kotlinOptions {
         allWarningsAsErrors = false
         freeCompilerArgs = freeCompilerArgs + listOf(
-            "-Xopt-in=kotlin.RequiresOptIn",
+            "-opt-in=kotlin.RequiresOptIn",
             "-Xdebug"
         )
     }
