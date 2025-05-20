@@ -83,18 +83,28 @@ fun HomeScreen(
     currentEditMode: MainViewModel.EditMode?,
     onEditModeSelected: (MainViewModel.EditMode) -> Unit,
     onDismissDialog: () -> Unit,
-    onUpdateValue: (Int, Boolean) -> Unit
+    onUpdateValue: (Int, Boolean) -> Unit,
+    onViewHistory: () -> @Composable Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Header with user info
-        Text(
-            text = "Hello, ${user.displayName}",
-            style = MaterialTheme.typography.headlineMedium
-        )
+        // Header with user info and history button
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Hello, ${user.displayName}",
+                style = MaterialTheme.typography.headlineMedium
+            )
+            TextButton(onClick = onViewHistory) {
+                Text("History")
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -175,7 +185,8 @@ fun HomeScreen(
                 MainViewModel.EditMode.STEPS -> trackingData.steps
             },
             onDismiss = onDismissDialog,
-            onUpdate = onUpdateValue
+            onUpdate = onUpdateValue,
+            onViewHistory = onViewHistory
         )
     }
 }
@@ -222,10 +233,10 @@ fun EditDialog(
     mode: MainViewModel.EditMode,
     currentValue: Int,
     onDismiss: () -> Unit,
-    onUpdate: (Int, Boolean) -> Unit
+    onUpdate: (Int, Boolean) -> Unit,
+    onViewHistory: () -> Unit
 ) {
-    var inputValue by remember { mutableStateOf("0") }
-
+    var inputValue by remember (mode, currentValue) { mutableStateOf(currentValue.toString()) }
     val title = when (mode) {
         MainViewModel.EditMode.PROTEIN -> "Update Protein"
         MainViewModel.EditMode.VEGETABLES -> "Update Vegetable Servings"

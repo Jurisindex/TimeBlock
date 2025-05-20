@@ -87,4 +87,12 @@ class Repository(private val userDao: UserDao, private val entryDao: EntryDao) {
     fun getTodayEntryFlow(): Flow<Entry> = flow {
         emit(getOrCreateTodayEntry())
     }
+
+    suspend fun getAllEntries(): List<Entry> {
+        return entryDao.getAllEntries().sortedBy { it.timeCreated }
+    }
+
+    fun getAllEntriesFlow(): Flow<List<Entry>> = flow {
+        emit(getAllEntries())
+    }
 }
