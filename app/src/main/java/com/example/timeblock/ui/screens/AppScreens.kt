@@ -19,6 +19,9 @@ import androidx.compose.ui.window.Dialog
 import com.example.timeblock.data.entity.Entry
 import com.example.timeblock.data.entity.User
 import com.example.timeblock.ui.MainViewModel
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.toKotlinInstant
 
 @Composable
 fun LoadingScreen() {
@@ -244,7 +247,7 @@ fun EditDialog(
     onUpdate: (Int, Boolean) -> Unit,
     onViewHistory: () -> Unit
 ) {
-    var inputValue by remember (mode, currentValue) { mutableStateOf(currentValue.toString()) }
+    var inputValue by remember(mode) { mutableStateOf("") }
     val title = when (mode) {
         MainViewModel.EditMode.PROTEIN -> "Update Protein"
         MainViewModel.EditMode.VEGETABLES -> "Update Vegetable Servings"
@@ -370,8 +373,18 @@ fun HistoryScreen(entries: List<Entry>, onBack: () -> Unit) {
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Spacer(modifier = Modifier.height(4.dp))
+                        val ldt = entry.timeCreated
+                            .toKotlinInstant()
+                            .toLocalDateTime(TimeZone.currentSystemDefault())
+                        val formattedDate = "%04d-%02d-%02d %02d:%02d".format(
+                            ldt.year,
+                            ldt.monthNumber,
+                            ldt.dayOfMonth,
+                            ldt.hour,
+                            ldt.minute
+                        )
                         Text(
-                            text = entry.timeCreated.toString(),
+                            text = "Date: $formattedDate",
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
