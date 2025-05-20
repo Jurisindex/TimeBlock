@@ -4,6 +4,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -84,7 +88,7 @@ fun HomeScreen(
     onEditModeSelected: (MainViewModel.EditMode) -> Unit,
     onDismissDialog: () -> Unit,
     onUpdateValue: (Int, Boolean) -> Unit,
-    onViewHistory: () -> @Composable Unit
+    onViewHistory: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -145,7 +149,11 @@ fun HomeScreen(
             }
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        TextButton(onClick = onViewHistory) {
+            Text("View History")
+        }
 
         // Bottom third with 3 buttons
         Row(
@@ -321,6 +329,51 @@ fun EditDialog(
                         modifier = Modifier.weight(1f).padding(start = 4.dp)
                     ) {
                         Text("Cancel")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun HistoryScreen(entries: List<Entry>, onBack: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) {
+                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "History",
+                style = MaterialTheme.typography.headlineMedium
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        LazyColumn {
+            items(entries) { entry ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Protein: ${entry.proteinGrams}g, Veggies: ${entry.vegetableServings}, Steps: ${entry.steps}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = entry.timeCreated.toString(),
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                 }
             }

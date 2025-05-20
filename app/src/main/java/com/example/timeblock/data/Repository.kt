@@ -89,10 +89,12 @@ class Repository(private val userDao: UserDao, private val entryDao: EntryDao) {
     }
 
     suspend fun getAllEntries(): List<Entry> {
-        return entryDao.getAllEntries().sortedBy { it.timeCreated }
+        return entryDao.getAllEntries()
     }
 
     fun getAllEntriesFlow(): Flow<List<Entry>> = flow {
         emit(getAllEntries())
     }
+
+
 }

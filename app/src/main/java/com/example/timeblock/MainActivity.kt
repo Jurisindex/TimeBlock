@@ -1,7 +1,6 @@
 package com.example.timeblock
 
 import android.os.Bundle
-import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
@@ -11,15 +10,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.timeblock.data.AppDatabase
 import com.example.timeblock.data.Repository
-import com.example.timeblock.HistoryActivity
 import com.example.timeblock.ui.MainViewModel
 import com.example.timeblock.ui.screens.HomeScreen
 import com.example.timeblock.ui.screens.LoadingScreen
 import com.example.timeblock.ui.screens.UserSetupScreen
+import com.example.timeblock.ui.screens.HistoryScreen
 import com.example.timeblock.ui.theme.TimeBlockTheme
 
 class MainActivity : ComponentActivity() {
@@ -47,6 +45,8 @@ class MainActivity : ComponentActivity() {
 fun TimeBlockApp(viewModelFactory: MainViewModel.MainViewModelFactory) {
     val viewModel: MainViewModel = viewModel(factory = viewModelFactory)
     val uiState by viewModel.uiState.collectAsState()
+    val isHistory by viewModel.isHistory.collectAsState()
+    val allEntries by viewModel.allEntries.collectAsState()
 
     when (uiState) {
         is MainViewModel.UiState.Loading -> {
@@ -62,18 +62,19 @@ fun TimeBlockApp(viewModelFactory: MainViewModel.MainViewModelFactory) {
             val trackingData by viewModel.trackingData.collectAsState()
             val editMode by viewModel.currentEditMode.collectAsState()
 
-            HomeScreen(
-                user = user,
-                trackingData = trackingData,
-                currentEditMode = editMode,
-                onEditModeSelected = { mode -> viewModel.showEditDialog(mode) },
-                onDismissDialog = { viewModel.dismissEditDialog() },
-                onUpdateValue = { value, isAddition -> viewModel.updateValue(value, isAddition) },
-                onViewHistory = {
-                    val context = LocalContext.current
-                    context.startActivity(Intent(context, HistoryActivity::class.java))
-                }
-            )
+            if (isHistory) {
+                HistoryScreen(entries = allEntries, onBack = { viewModel.exitHistory() })
+            } else {
+                HomeScreen(
+                    user = user,
+                    trackingData = trackingData,
+                    currentEditMode = editMode,
+                    onEditModeSelected = { mode -> viewModel.showEditDialog(mode) },
+                    onDismissDialog = { viewModel.dismissEditDialog() },
+                    onUpdateValue = { value, isAddition -> viewModel.updateValue(value, isAddition) },
+                    onViewHistory = { viewModel.viewHistory() }
+                )
+            }
         }
     }
 }

@@ -22,6 +22,12 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
     private val _currentEditMode = MutableStateFlow<EditMode?>(null)
     val currentEditMode: StateFlow<EditMode?> = _currentEditMode.asStateFlow()
 
+    private val _isHistory = MutableStateFlow(false)
+    val isHistory: StateFlow<Boolean> = _isHistory.asStateFlow()
+
+    private val _allEntries = MutableStateFlow<List<Entry>>(emptyList())
+    val allEntries: StateFlow<List<Entry>> = _allEntries.asStateFlow()
+
     init {
         checkUserStatus()
     }
@@ -71,6 +77,17 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
             _trackingData.value = updatedEntry
             _currentEditMode.value = null
         }
+    }
+
+    fun viewHistory() {
+        viewModelScope.launch {
+            _allEntries.value = repository.getAllEntries()
+            _isHistory.value = true
+        }
+    }
+
+    fun exitHistory() {
+        _isHistory.value = false
     }
 
     sealed class UiState {
