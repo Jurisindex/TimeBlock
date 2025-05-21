@@ -76,23 +76,28 @@ fun UserSetupScreen(onUserCreated: (String, String) -> Unit) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
-            value = weightValue,
-            onValueChange = { if (it.all { c -> c.isDigit() || c == '.' }) weightValue = it },
-            label = { Text("Weight") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth()
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = weightValue,
+                onValueChange = { if (it.all { c -> c.isDigit() || c == '.' }) weightValue = it },
+                label = { Text("Weight") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f)
+            )
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
-        Box {
-            OutlinedButton(onClick = { expanded = true }) {
-                Text(selectedUnit)
-            }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                DropdownMenuItem(text = { Text("kg") }, onClick = { selectedUnit = "kg"; expanded = false })
-                DropdownMenuItem(text = { Text("lbs") }, onClick = { selectedUnit = "lbs"; expanded = false })
+            Box {
+                OutlinedButton(onClick = { expanded = true }) {
+                    Text(selectedUnit)
+                }
+                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    DropdownMenuItem(text = { Text("kg") }, onClick = { selectedUnit = "kg"; expanded = false })
+                    DropdownMenuItem(text = { Text("lbs") }, onClick = { selectedUnit = "lbs"; expanded = false })
+                }
             }
         }
 
@@ -414,21 +419,26 @@ fun WeightDialog(onDismiss: () -> Unit, onSet: (String) -> Unit) {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = weightValue,
-                    onValueChange = { if (it.all { c -> c.isDigit() || c == '.' }) weightValue = it },
-                    label = { Text("Weight") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = weightValue,
+                        onValueChange = { if (it.all { c -> c.isDigit() || c == '.' }) weightValue = it },
+                        label = { Text("Weight") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f)
+                    )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
 
-                Box {
-                    OutlinedButton(onClick = { expanded = true }) { Text(unit) }
-                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                        DropdownMenuItem(text = { Text("kg") }, onClick = { unit = "kg"; expanded = false })
-                        DropdownMenuItem(text = { Text("lbs") }, onClick = { unit = "lbs"; expanded = false })
+                    Box {
+                        OutlinedButton(onClick = { expanded = true }) { Text(unit) }
+                        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                            DropdownMenuItem(text = { Text("kg") }, onClick = { unit = "kg"; expanded = false })
+                            DropdownMenuItem(text = { Text("lbs") }, onClick = { unit = "lbs"; expanded = false })
+                        }
                     }
                 }
 
@@ -482,21 +492,26 @@ fun SettingsScreen(user: User, onSave: (String, String) -> Unit, onBack: () -> U
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
-            value = weightVal,
-            onValueChange = { if (it.all { c -> c.isDigit() || c == '.' }) weightVal = it },
-            label = { Text("Weight") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth()
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = weightVal,
+                onValueChange = { if (it.all { c -> c.isDigit() || c == '.' }) weightVal = it },
+                label = { Text("Weight") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f)
+            )
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
-        Box {
-            OutlinedButton(onClick = { expanded = true }) { Text(unit) }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                DropdownMenuItem(text = { Text("kg") }, onClick = { unit = "kg"; expanded = false })
-                DropdownMenuItem(text = { Text("lbs") }, onClick = { unit = "lbs"; expanded = false })
+            Box {
+                OutlinedButton(onClick = { expanded = true }) { Text(unit) }
+                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    DropdownMenuItem(text = { Text("kg") }, onClick = { unit = "kg"; expanded = false })
+                    DropdownMenuItem(text = { Text("lbs") }, onClick = { unit = "lbs"; expanded = false })
+                }
             }
         }
 
