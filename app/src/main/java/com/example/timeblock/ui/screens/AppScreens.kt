@@ -13,7 +13,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -22,6 +24,7 @@ import androidx.compose.ui.window.Dialog
 import com.example.timeblock.data.entity.Entry
 import com.example.timeblock.data.entity.User
 import com.example.timeblock.ui.MainViewModel
+import com.example.timeblock.util.proteinGoalForWeightString
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.toKotlinInstant
@@ -75,7 +78,7 @@ fun UserSetupScreen(onUserCreated: (String, String) -> Unit) {
 
         OutlinedTextField(
             value = weightValue,
-            onValueChange = { if (it.all { c -> c.isDigit() }) weightValue = it },
+            onValueChange = { if (it.all { c -> c.isDigit() || c == '.' }) weightValue = it },
             label = { Text("Weight") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
@@ -98,7 +101,7 @@ fun UserSetupScreen(onUserCreated: (String, String) -> Unit) {
         Button(
             onClick = {
                 if (displayName.isNotBlank()) {
-                    val weightString = if (weightValue.isNotBlank() && weightValue.toIntOrNull() != null && weightValue.toInt() > 0) {
+                    val weightString = if (weightValue.isNotBlank() && weightValue.toDoubleOrNull() != null && weightValue.toDouble() > 0) {
                         "$weightValue $selectedUnit"
                     } else {
                         "0"
@@ -147,8 +150,11 @@ fun HomeScreen(
                 text = "Hello, ${user.displayName}",
                 style = MaterialTheme.typography.headlineMedium
             )
-            IconButton(onClick = onViewHistory) {
-                Icon(imageVector = Icons.Default.ContentPaste, contentDescription = "History")
+            val clipboard = LocalClipboardManager.current
+            IconButton(onClick = {
+                clipboard.setText(AnnotatedString("Fitter"))
+            }) {
+                Icon(imageVector = Icons.Default.ContentPaste, contentDescription = "Copy")
             }
         }
 
@@ -174,9 +180,10 @@ fun HomeScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
+                        val goal = proteinGoalForWeightString(user.weight)
                         StatItem(
                             label = "Protein",
-                            value = "${trackingData.proteinGrams}g/{Weight*0.9}g"
+                            value = "${trackingData.proteinGrams}g/$goal g"
                         )
                         StatItem(
                             label = "Veggies",
@@ -193,7 +200,7 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        IconButton(onClick = onViewHistory) {
+        TextButton(onClick = onViewHistory, modifier = Modifier.align(Alignment.Start)) {
             Icon(imageVector = Icons.Default.ContentPaste, contentDescription = "View History")
             Spacer(modifier = Modifier.width(8.dp))
             Text("View History")
@@ -409,7 +416,7 @@ fun WeightDialog(onDismiss: () -> Unit, onSet: (String) -> Unit) {
 
                 OutlinedTextField(
                     value = weightValue,
-                    onValueChange = { if (it.all { c -> c.isDigit() }) weightValue = it },
+                    onValueChange = { if (it.all { c -> c.isDigit() || c == '.' }) weightValue = it },
                     label = { Text("Weight") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
@@ -429,7 +436,7 @@ fun WeightDialog(onDismiss: () -> Unit, onSet: (String) -> Unit) {
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     Button(onClick = {
-                        val w = if (weightValue.isNotBlank() && weightValue.toIntOrNull() != null && weightValue.toInt() > 0) {
+                        val w = if (weightValue.isNotBlank() && weightValue.toDoubleOrNull() != null && weightValue.toDouble() > 0) {
                             "$weightValue $unit"
                         } else {
                             "0"
@@ -447,7 +454,7 @@ fun WeightDialog(onDismiss: () -> Unit, onSet: (String) -> Unit) {
 @Composable
 fun SettingsScreen(user: User, onSave: (String, String) -> Unit, onBack: () -> Unit) {
     var name by remember { mutableStateOf(user.displayName) }
-    var weightVal by remember { mutableStateOf(user.weight.takeWhile { it.isDigit() }) }
+    var weightVal by remember { mutableStateOf(user.weight.takeWhile { it.isDigit() || it == '.' }) }
     var expanded by remember { mutableStateOf(false) }
     var unit by remember { mutableStateOf(if (user.weight.endsWith("lbs")) "lbs" else "kg") }
 
@@ -477,7 +484,7 @@ fun SettingsScreen(user: User, onSave: (String, String) -> Unit, onBack: () -> U
 
         OutlinedTextField(
             value = weightVal,
-            onValueChange = { if (it.all { c -> c.isDigit() }) weightVal = it },
+            onValueChange = { if (it.all { c -> c.isDigit() || c == '.' }) weightVal = it },
             label = { Text("Weight") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
@@ -497,7 +504,7 @@ fun SettingsScreen(user: User, onSave: (String, String) -> Unit, onBack: () -> U
 
         Button(
             onClick = {
-                val weightString = if (weightVal.isNotBlank() && weightVal.toIntOrNull() != null && weightVal.toInt() > 0) {
+                val weightString = if (weightVal.isNotBlank() && weightVal.toDoubleOrNull() != null && weightVal.toDouble() > 0) {
                     "$weightVal $unit"
                 } else {
                     "0"
