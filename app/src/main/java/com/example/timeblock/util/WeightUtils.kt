@@ -9,10 +9,13 @@ data class Weight(val value: Double, val unit: Unit) {
 
 /** Parse a string like "70 kg" or "150 lbs" into a [Weight] object. */
 fun parseWeight(weightString: String): Weight? {
-    val regex = Regex("""([0-9]+(?:\\.[0-9]+)?)\\s*(kg|lbs)""", RegexOption.IGNORE_CASE)
-    val match = regex.find(weightString.trim()) ?: return null
-    val value = match.groupValues[1].toDoubleOrNull() ?: return null
-    val unit = if (match.groupValues[2].lowercase() == "kg") Weight.Unit.KG else Weight.Unit.LBS
+    val regex = Regex("""([0-9]+(?:\.[0-9]+)?)\s*(kg|lbs)""", RegexOption.IGNORE_CASE)
+    android.util.Log.d("WeightUtils", "Parsing weight: '$weightString'")
+    val match = regex.find(weightString.trim())
+    android.util.Log.d("WeightUtils", "Match result: $match")
+    val matchResult = match ?: return null
+    val value = matchResult.groupValues[1].toDoubleOrNull() ?: return null
+    val unit = if (matchResult.groupValues[2].lowercase() == "kg") Weight.Unit.KG else Weight.Unit.LBS
     return Weight(value, unit)
 }
 
