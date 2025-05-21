@@ -18,6 +18,7 @@ import com.example.timeblock.ui.screens.HomeScreen
 import com.example.timeblock.ui.screens.LoadingScreen
 import com.example.timeblock.ui.screens.UserSetupScreen
 import com.example.timeblock.ui.screens.HistoryScreen
+import com.example.timeblock.ui.screens.SettingsScreen
 import com.example.timeblock.ui.theme.TimeBlockTheme
 
 class MainActivity : ComponentActivity() {
@@ -46,6 +47,7 @@ fun TimeBlockApp(viewModelFactory: MainViewModel.MainViewModelFactory) {
     val viewModel: MainViewModel = viewModel(factory = viewModelFactory)
     val uiState by viewModel.uiState.collectAsState()
     val isHistory by viewModel.isHistory.collectAsState()
+    val isSettings by viewModel.isSettings.collectAsState()
     val allEntries by viewModel.allEntries.collectAsState()
 
     when (uiState) {
@@ -53,8 +55,8 @@ fun TimeBlockApp(viewModelFactory: MainViewModel.MainViewModelFactory) {
             LoadingScreen()
         }
         is MainViewModel.UiState.NeedsUser -> {
-            UserSetupScreen(onUserCreated = { displayName ->
-                viewModel.createUser(displayName)
+            UserSetupScreen(onUserCreated = { displayName, weight ->
+                viewModel.createUser(displayName, weight)
             })
         }
         is MainViewModel.UiState.Ready -> {
@@ -62,8 +64,12 @@ fun TimeBlockApp(viewModelFactory: MainViewModel.MainViewModelFactory) {
             val trackingData by viewModel.trackingData.collectAsState()
             val editMode by viewModel.currentEditMode.collectAsState()
 
-            if (isHistory) {
-                HistoryScreen(entries = allEntries, onBack = { viewModel.exitHistory() })
+            if (isSettings) {
+                SettingsScreen(user = user,
+                    onSave = { name, weight -> viewModel.updateUser(user, name, weight); viewModel.closeSettings() },
+                    onBack = { viewModel.closeSettings() })
+            } else if (isHistory) {
+                HistoryScreen(entries = allEntries, weight = user.weight, onBack = { viewModel.exitHistory() })
             } else {
                 HomeScreen(
                     user = user,
@@ -72,7 +78,10 @@ fun TimeBlockApp(viewModelFactory: MainViewModel.MainViewModelFactory) {
                     onEditModeSelected = { mode -> viewModel.showEditDialog(mode) },
                     onDismissDialog = { viewModel.dismissEditDialog() },
                     onUpdateValue = { value, isAddition -> viewModel.updateValue(value, isAddition) },
-                    onViewHistory = { viewModel.viewHistory() }
+                    onViewHistory = { viewModel.viewHistory() },
+                    onOpenSettings = { viewModel.openSettings() },
+                    showWeightPrompt = user.weight == "0",
+                    onWeightSet = { weight -> viewModel.updateUser(user, user.displayName, weight) }
                 )
             }
         }

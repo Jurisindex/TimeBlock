@@ -6,6 +6,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.*
@@ -35,8 +37,11 @@ fun LoadingScreen() {
 }
 
 @Composable
-fun UserSetupScreen(onUserCreated: (String) -> Unit) {
+fun UserSetupScreen(onUserCreated: (String, String) -> Unit) {
     var displayName by remember { mutableStateOf("") }
+    var weightValue by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+    var selectedUnit by remember { mutableStateOf("kg") }
 
     Column(
         modifier = Modifier
@@ -66,12 +71,39 @@ fun UserSetupScreen(onUserCreated: (String) -> Unit) {
             modifier = Modifier.fillMaxWidth()
         )
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = weightValue,
+            onValueChange = { if (it.all { c -> c.isDigit() }) weightValue = it },
+            label = { Text("Weight") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Box {
+            OutlinedButton(onClick = { expanded = true }) {
+                Text(selectedUnit)
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                DropdownMenuItem(text = { Text("kg") }, onClick = { selectedUnit = "kg"; expanded = false })
+                DropdownMenuItem(text = { Text("lbs") }, onClick = { selectedUnit = "lbs"; expanded = false })
+            }
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = {
                 if (displayName.isNotBlank()) {
-                    onUserCreated(displayName)
+                    val weightString = if (weightValue.isNotBlank() && weightValue.toIntOrNull() != null && weightValue.toInt() > 0) {
+                        "$weightValue $selectedUnit"
+                    } else {
+                        "0"
+                    }
+                    onUserCreated(displayName, weightString)
                 }
             },
             enabled = displayName.isNotBlank(),
@@ -92,7 +124,10 @@ fun HomeScreen(
     onEditModeSelected: (MainViewModel.EditMode) -> Unit,
     onDismissDialog: () -> Unit,
     onUpdateValue: (Int, Boolean) -> Unit,
-    onViewHistory: () -> Unit
+    onViewHistory: () -> Unit,
+    onOpenSettings: () -> Unit,
+    showWeightPrompt: Boolean,
+    onWeightSet: (String) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -105,12 +140,15 @@ fun HomeScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            IconButton(onClick = onOpenSettings) {
+                Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings")
+            }
             Text(
                 text = "Hello, ${user.displayName}",
                 style = MaterialTheme.typography.headlineMedium
             )
-            TextButton(onClick = onViewHistory) {
-                Text("History")
+            IconButton(onClick = onViewHistory) {
+                Icon(imageVector = Icons.Default.ContentPaste, contentDescription = "History")
             }
         }
 
@@ -155,7 +193,9 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        TextButton(onClick = onViewHistory) {
+        IconButton(onClick = onViewHistory) {
+            Icon(imageVector = Icons.Default.ContentPaste, contentDescription = "View History")
+            Spacer(modifier = Modifier.width(8.dp))
             Text("View History")
         }
 
@@ -200,6 +240,10 @@ fun HomeScreen(
             onUpdate = onUpdateValue,
             onViewHistory = onViewHistory
         )
+    }
+
+    if (showWeightPrompt) {
+        WeightDialog(onDismiss = {}, onSet = onWeightSet)
     }
 }
 
@@ -351,7 +395,122 @@ fun EditDialog(
 }
 
 @Composable
-fun HistoryScreen(entries: List<Entry>, onBack: () -> Unit) {
+fun WeightDialog(onDismiss: () -> Unit, onSet: (String) -> Unit) {
+    var weightValue by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+    var unit by remember { mutableStateOf("kg") }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text(text = "Enter Weight", style = MaterialTheme.typography.headlineSmall)
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = weightValue,
+                    onValueChange = { if (it.all { c -> c.isDigit() }) weightValue = it },
+                    label = { Text("Weight") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Box {
+                    OutlinedButton(onClick = { expanded = true }) { Text(unit) }
+                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        DropdownMenuItem(text = { Text("kg") }, onClick = { unit = "kg"; expanded = false })
+                        DropdownMenuItem(text = { Text("lbs") }, onClick = { unit = "lbs"; expanded = false })
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    Button(onClick = {
+                        val w = if (weightValue.isNotBlank() && weightValue.toIntOrNull() != null && weightValue.toInt() > 0) {
+                            "$weightValue $unit"
+                        } else {
+                            "0"
+                        }
+                        onSet(w)
+                    }) {
+                        Text("Set")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SettingsScreen(user: User, onSave: (String, String) -> Unit, onBack: () -> Unit) {
+    var name by remember { mutableStateOf(user.displayName) }
+    var weightVal by remember { mutableStateOf(user.weight.takeWhile { it.isDigit() }) }
+    var expanded by remember { mutableStateOf(false) }
+    var unit by remember { mutableStateOf(if (user.weight.endsWith("lbs")) "lbs" else "kg") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) {
+                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = "Settings", style = MaterialTheme.typography.headlineMedium)
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("Display Name") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = weightVal,
+            onValueChange = { if (it.all { c -> c.isDigit() }) weightVal = it },
+            label = { Text("Weight") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Box {
+            OutlinedButton(onClick = { expanded = true }) { Text(unit) }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                DropdownMenuItem(text = { Text("kg") }, onClick = { unit = "kg"; expanded = false })
+                DropdownMenuItem(text = { Text("lbs") }, onClick = { unit = "lbs"; expanded = false })
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Button(
+            onClick = {
+                val weightString = if (weightVal.isNotBlank() && weightVal.toIntOrNull() != null && weightVal.toInt() > 0) {
+                    "$weightVal $unit"
+                } else {
+                    "0"
+                }
+                onSave(name, weightString)
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) { Text("Save") }
+    }
+}
+
+@Composable
+fun HistoryScreen(entries: List<Entry>, weight: String, onBack: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -394,10 +553,19 @@ fun HistoryScreen(entries: List<Entry>, onBack: () -> Unit) {
                             ldt.hour,
                             ldt.minute
                         )
-                        Text(
-                            text = "Date: $formattedDate",
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                text = "Date: $formattedDate",
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Text(
+                                text = weight,
+                                style = MaterialTheme.typography.bodySmall,
+                                textAlign = TextAlign.End,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                 }
             }

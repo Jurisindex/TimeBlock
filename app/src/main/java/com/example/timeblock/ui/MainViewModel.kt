@@ -25,6 +25,9 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
     private val _isHistory = MutableStateFlow(false)
     val isHistory: StateFlow<Boolean> = _isHistory.asStateFlow()
 
+    private val _isSettings = MutableStateFlow(false)
+    val isSettings: StateFlow<Boolean> = _isSettings.asStateFlow()
+
     private val _allEntries = MutableStateFlow<List<Entry>>(emptyList())
     val allEntries: StateFlow<List<Entry>> = _allEntries.asStateFlow()
 
@@ -50,9 +53,9 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
         }
     }
 
-    fun createUser(displayName: String) {
+    fun createUser(displayName: String, weight: String) {
         viewModelScope.launch {
-            val user = repository.insertUser(displayName)
+            val user = repository.insertUser(displayName, weight)
             _uiState.value = UiState.Ready(user)
             loadTodayEntry()
         }
@@ -88,6 +91,21 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
 
     fun exitHistory() {
         _isHistory.value = false
+    }
+
+    fun openSettings() {
+        _isSettings.value = true
+    }
+
+    fun closeSettings() {
+        _isSettings.value = false
+    }
+
+    fun updateUser(user: User, displayName: String, weight: String) {
+        viewModelScope.launch {
+            val updated = repository.updateUser(user, displayName, weight)
+            _uiState.value = UiState.Ready(updated)
+        }
     }
 
     sealed class UiState {
