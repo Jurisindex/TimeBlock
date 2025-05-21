@@ -14,11 +14,12 @@ import kotlinx.coroutines.flow.flow
 class Repository(private val userDao: UserDao, private val entryDao: EntryDao) {
 
     // User operations
-    suspend fun insertUser(displayName: String): User {
+    suspend fun insertUser(displayName: String, weight: String): User {
         val now = Instant.now()
         val user = User(
             userUuid = UUID.randomUUID().toString(),
             displayName = displayName,
+            weight = weight,
             timeCreated = now,
             timeModified = now
         )
@@ -29,6 +30,16 @@ class Repository(private val userDao: UserDao, private val entryDao: EntryDao) {
     suspend fun getUser(): User? {
         val users = userDao.getAllUsers()
         return users.firstOrNull()
+    }
+
+    suspend fun updateUser(user: User, newDisplayName: String, newWeight: String): User {
+        val updated = user.copy(
+            displayName = newDisplayName,
+            weight = newWeight,
+            timeModified = Instant.now()
+        )
+        userDao.updateUser(updated.displayName, updated.weight, updated.timeModified, updated.userUuid)
+        return updated
     }
 
     // Entry operations
