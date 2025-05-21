@@ -157,7 +157,25 @@ fun HomeScreen(
             )
             val clipboard = LocalClipboardManager.current
             IconButton(onClick = {
-                clipboard.setText(AnnotatedString("Fitter"))
+                if (trackingData != null) {
+                    val ldt = trackingData.timeCreated
+                        .toKotlinInstant()
+                        .toLocalDateTime(TimeZone.currentSystemDefault())
+                    val formattedDate = "%04d-%02d-%02d %02d:%02d".format(
+                        ldt.year,
+                        ldt.monthNumber,
+                        ldt.dayOfMonth,
+                        ldt.hour,
+                        ldt.minute
+                    )
+                    val copyText = """
+                        Date: $formattedDate
+                        Protein: ${trackingData.proteinGrams}g
+                        Veggies: ${trackingData.vegetableServings}
+                        Steps: ${trackingData.steps}
+                    """.trimIndent()
+                    clipboard.setText(AnnotatedString(copyText))
+                }
             }) {
                 Icon(imageVector = Icons.Default.ContentPaste, contentDescription = "Copy")
             }
@@ -575,7 +593,11 @@ fun HistoryScreen(entries: List<Entry>, weight: String, onBack: () -> Unit) {
                             ldt.hour,
                             ldt.minute
                         )
-                        Row(modifier = Modifier.fillMaxWidth()) {
+                        val clipboard = LocalClipboardManager.current
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Text(
                                 text = "Date: $formattedDate",
                                 style = MaterialTheme.typography.bodySmall,
@@ -587,6 +609,17 @@ fun HistoryScreen(entries: List<Entry>, weight: String, onBack: () -> Unit) {
                                 textAlign = TextAlign.End,
                                 modifier = Modifier.weight(1f)
                             )
+                            IconButton(onClick = {
+                                val copyText = """
+                                    Date: $formattedDate
+                                    Protein: ${entry.proteinGrams}g
+                                    Veggies: ${entry.vegetableServings}
+                                    Steps: ${entry.steps}
+                                """.trimIndent()
+                                clipboard.setText(AnnotatedString(copyText))
+                            }) {
+                                Icon(imageVector = Icons.Default.ContentPaste, contentDescription = "Copy")
+                            }
                         }
                     }
                 }
