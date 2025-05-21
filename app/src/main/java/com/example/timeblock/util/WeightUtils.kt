@@ -9,11 +9,22 @@ data class Weight(val value: Double, val unit: Unit) {
 
 /** Parse a string like "70 kg" or "150 lbs" into a [Weight] object. */
 fun parseWeight(weightString: String): Weight? {
+    val trimmed = weightString.trim()
     val regex = Regex("""([0-9]+(?:\\.[0-9]+)?)\\s*(kg|lbs)""", RegexOption.IGNORE_CASE)
-    val match = regex.find(weightString.trim()) ?: return null
-    val value = match.groupValues[1].toDoubleOrNull() ?: return null
-    val unit = if (match.groupValues[2].lowercase() == "kg") Weight.Unit.KG else Weight.Unit.LBS
-    return Weight(value, unit)
+    val match = regex.find(trimmed)
+    if (match != null) {
+        val value = match.groupValues[1].toDoubleOrNull() ?: return null
+        val unit = if (match.groupValues[2].equals("kg", ignoreCase = true)) Weight.Unit.KG else Weight.Unit.LBS
+        return Weight(value, unit)
+    }
+
+    // Fallback: if the string only contains digits, assume kilograms
+    val numeric = trimmed.toDoubleOrNull()
+    if (numeric != null) {
+        return Weight(numeric, Weight.Unit.KG)
+    }
+
+    return null
 }
 
 /** Calculate the recommended protein goal in grams for the given weight. */
