@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.timeblock.data.entity.Entry
@@ -137,15 +138,15 @@ fun HomeScreen(
                     ) {
                         StatItem(
                             label = "Protein",
-                            value = "${trackingData.proteinGrams}g"
+                            value = "${trackingData.proteinGrams}g/{Weight*0.9}g"
                         )
                         StatItem(
-                            label = "Vegetables",
-                            value = "${trackingData.vegetableServings} servings"
+                            label = "Veggies",
+                            value = "${trackingData.vegetableServings} serv/5"
                         )
                         StatItem(
                             label = "Steps",
-                            value = "${trackingData.steps}"
+                            value = "${trackingData.steps}/8500"
                         )
                     }
                 }
@@ -173,7 +174,7 @@ fun HomeScreen(
             )
 
             TrackingButton(
-                label = "Vegetables",
+                label = "Veggies",
                 modifier = Modifier.weight(1f),
                 onClick = { onEditModeSelected(MainViewModel.EditMode.VEGETABLES) }
             )
@@ -210,7 +211,9 @@ fun StatItem(label: String, value: String) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Visible
         )
         Text(
             text = value,
@@ -234,7 +237,9 @@ fun TrackingButton(
         Text(
             text = label,
             style = MaterialTheme.typography.titleMedium,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Visible
         )
     }
 }
@@ -327,11 +332,17 @@ fun EditDialog(
                     }
 
                     // Cancel button
-                    OutlinedButton(
+                    Button(
                         onClick = onDismiss,
-                        modifier = Modifier.weight(1f).padding(start = 4.dp)
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = 4.dp)
                     ) {
-                        Text("Cancel")
+                        Text("Back")
                     }
                 }
             }
