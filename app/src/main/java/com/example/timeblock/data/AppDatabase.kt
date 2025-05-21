@@ -11,7 +11,7 @@ import com.example.timeblock.data.entity.Entry
 import com.example.timeblock.data.entity.User
 import com.example.timeblock.util.DateTypeConverters
 
-@Database(entities = [User::class, Entry::class], version = 1, exportSchema = false)
+@Database(entities = [User::class, Entry::class], version = 2, exportSchema = false)
 @TypeConverters(DateTypeConverters::class)
 abstract class AppDatabase : RoomDatabase() {
 
