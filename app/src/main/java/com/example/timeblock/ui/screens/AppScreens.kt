@@ -193,7 +193,9 @@ fun HomeScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         IconButton(onClick = onViewHistory) {
-            Icon(imageVector = Icons.Default.ContentPaste, contentDescription = "History")
+            Icon(imageVector = Icons.Default.ContentPaste, contentDescription = "View History")
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("View History")
         }
 
         // Bottom third with 3 buttons
