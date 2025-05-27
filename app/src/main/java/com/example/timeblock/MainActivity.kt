@@ -10,7 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.ViewModelProvider
 import com.example.timeblock.data.AppDatabase
 import com.example.timeblock.data.Repository
 import com.example.timeblock.ui.MainViewModel
@@ -22,12 +22,16 @@ import com.example.timeblock.ui.screens.SettingsScreen
 import com.example.timeblock.ui.theme.TimeBlockTheme
 
 class MainActivity : ComponentActivity() {
+
+    private lateinit var viewModel: MainViewModel
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val database = AppDatabase.getDatabase(applicationContext)
         val repository = Repository(database.userDao(), database.entryDao())
         val viewModelFactory = MainViewModel.MainViewModelFactory(repository)
+        viewModel = ViewModelProvider(this, viewModelFactory)[MainViewModel::class.java]
 
         setContent {
             TimeBlockTheme {
@@ -35,16 +39,20 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    TimeBlockApp(viewModelFactory)
+                    TimeBlockApp(viewModel)
                 }
             }
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.refreshForDateChange()
+    }
 }
 
 @Composable
-fun TimeBlockApp(viewModelFactory: MainViewModel.MainViewModelFactory) {
-    val viewModel: MainViewModel = viewModel(factory = viewModelFactory)
+fun TimeBlockApp(viewModel: MainViewModel) {
     val uiState by viewModel.uiState.collectAsState()
     val isHistory by viewModel.isHistory.collectAsState()
     val isSettings by viewModel.isSettings.collectAsState()

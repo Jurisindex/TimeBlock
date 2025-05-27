@@ -3,6 +3,7 @@ package com.example.timeblock.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import java.time.LocalDate
 import com.example.timeblock.data.Repository
 import com.example.timeblock.data.entity.Entry
 import com.example.timeblock.data.entity.User
@@ -12,6 +13,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class MainViewModel(private val repository: Repository) : ViewModel() {
+
+    private var lastLoadedDay: LocalDate? = null
 
     private val _uiState = MutableStateFlow<UiState>(UiState.Loading)
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
@@ -50,6 +53,14 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
     private fun loadTodayEntry() {
         viewModelScope.launch {
             _trackingData.value = repository.getOrCreateTodayEntry()
+            lastLoadedDay = LocalDate.now()
+        }
+    }
+
+    fun refreshForDateChange() {
+        val today = LocalDate.now()
+        if (lastLoadedDay != today) {
+            loadTodayEntry()
         }
     }
 
