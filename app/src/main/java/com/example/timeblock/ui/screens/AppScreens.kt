@@ -8,12 +8,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
@@ -25,9 +27,11 @@ import com.example.timeblock.data.entity.Entry
 import com.example.timeblock.data.entity.User
 import com.example.timeblock.ui.MainViewModel
 import com.example.timeblock.util.proteinGoalForWeightString
+import com.example.timeblock.util.ScoreUtils
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.toKotlinInstant
+import android.content.Intent
 
 @Composable
 fun LoadingScreen() {
@@ -156,28 +160,45 @@ fun HomeScreen(
                 style = MaterialTheme.typography.headlineMedium
             )
             val clipboard = LocalClipboardManager.current
-            IconButton(onClick = {
-                if (trackingData != null) {
-                    val ldt = trackingData.timeCreated
-                        .toKotlinInstant()
-                        .toLocalDateTime(TimeZone.currentSystemDefault())
-                    val formattedDate = "%04d-%02d-%02d %02d:%02d".format(
-                        ldt.year,
-                        ldt.monthNumber,
-                        ldt.dayOfMonth,
-                        ldt.hour,
-                        ldt.minute
-                    )
-                    val copyText = """
-                        Date: $formattedDate
-                        Protein: ${trackingData.proteinGrams}g
-                        Veggies: ${trackingData.vegetableServings}
-                        Steps: ${trackingData.steps}
-                    """.trimIndent()
-                    clipboard.setText(AnnotatedString(copyText))
+            val context = LocalContext.current
+            Row {
+                IconButton(onClick = {
+                    if (trackingData != null) {
+                        val ldt = trackingData.timeCreated
+                            .toKotlinInstant()
+                            .toLocalDateTime(TimeZone.currentSystemDefault())
+                        val formattedDate = "%04d-%02d-%02d %02d:%02d".format(
+                            ldt.year,
+                            ldt.monthNumber,
+                            ldt.dayOfMonth,
+                            ldt.hour,
+                            ldt.minute
+                        )
+                        val copyText = """
+                            Date: $formattedDate
+                            Protein: ${trackingData.proteinGrams}g
+                            Veggies: ${trackingData.vegetableServings}
+                            Steps: ${trackingData.steps}
+                        """.trimIndent()
+                        clipboard.setText(AnnotatedString(copyText))
+                    }
+                }) {
+                    Icon(imageVector = Icons.Default.ContentPaste, contentDescription = "Copy")
                 }
-            }) {
-                Icon(imageVector = Icons.Default.ContentPaste, contentDescription = "Copy")
+                IconButton(onClick = {
+                    if (trackingData != null) {
+                        val text = ScoreUtils.formatMetrics(trackingData, user.weight)
+                        val sendIntent = Intent().apply {
+                            action = Intent.ACTION_SEND
+                            putExtra(Intent.EXTRA_TEXT, text)
+                            type = "text/plain"
+                        }
+                        val shareIntent = Intent.createChooser(sendIntent, null)
+                        context.startActivity(shareIntent)
+                    }
+                }) {
+                    Icon(imageVector = Icons.Default.Share, contentDescription = "Share Score")
+                }
             }
         }
 
