@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.timeblock.data.entity.Entry
 import com.example.timeblock.data.entity.User
+import com.example.timeblock.data.ThemeMode
 import com.example.timeblock.ui.MainViewModel
 import com.example.timeblock.util.proteinGoalForWeightString
 import kotlinx.datetime.TimeZone
@@ -480,7 +481,19 @@ fun WeightDialog(onDismiss: () -> Unit, onSet: (String) -> Unit) {
 }
 
 @Composable
-fun SettingsScreen(user: User, onSave: (String, String) -> Unit, onBack: () -> Unit) {
+fun SettingsScreen(
+    user: User,
+    theme: ThemeMode,
+    onThemeChange: (ThemeMode) -> Unit,
+    garminEnabled: Boolean,
+    onGarminChange: (Boolean) -> Unit,
+    wordleShare: Boolean,
+    onWordleChange: (Boolean) -> Unit,
+    onExportDb: () -> Unit,
+    onImportDb: () -> Unit,
+    onSave: (String, String) -> Unit,
+    onBack: () -> Unit
+) {
     var name by remember { mutableStateOf(user.displayName) }
     var weightVal by remember { mutableStateOf(user.weight.takeWhile { it.isDigit() || it == '.' }) }
     var expanded by remember { mutableStateOf(false) }
@@ -546,6 +559,59 @@ fun SettingsScreen(user: User, onSave: (String, String) -> Unit, onBack: () -> U
             },
             modifier = Modifier.fillMaxWidth()
         ) { Text("Save") }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(text = "Theme", style = MaterialTheme.typography.titleMedium)
+        Row {
+            RadioButton(selected = theme == ThemeMode.SYSTEM, onClick = { onThemeChange(ThemeMode.SYSTEM) })
+            Text("System", modifier = Modifier.align(Alignment.CenterVertically))
+            Spacer(modifier = Modifier.width(8.dp))
+            RadioButton(selected = theme == ThemeMode.LIGHT, onClick = { onThemeChange(ThemeMode.LIGHT) })
+            Text("Light", modifier = Modifier.align(Alignment.CenterVertically))
+            Spacer(modifier = Modifier.width(8.dp))
+            RadioButton(selected = theme == ThemeMode.DARK, onClick = { onThemeChange(ThemeMode.DARK) })
+            Text("Dark", modifier = Modifier.align(Alignment.CenterVertically))
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Garmin Integration", modifier = Modifier.weight(1f))
+            Switch(checked = garminEnabled, onCheckedChange = onGarminChange)
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Wordle Share Format", modifier = Modifier.weight(1f))
+            Switch(checked = wordleShare, onCheckedChange = onWordleChange)
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = onExportDb, modifier = Modifier.fillMaxWidth()) {
+            Text("Export Database")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        var showImport by remember { mutableStateOf(false) }
+        Button(onClick = { showImport = true }, modifier = Modifier.fillMaxWidth()) {
+            Text("Import Database")
+        }
+        if (showImport) {
+            AlertDialog(
+                onDismissRequest = { showImport = false },
+                confirmButton = {
+                    TextButton(onClick = { showImport = false; onImportDb() }) { Text("Replace") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showImport = false }) { Text("Cancel") }
+                },
+                text = { Text("Importing will replace the existing database. Continue?") }
+            )
+        }
     }
 }
 
