@@ -31,6 +31,9 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
     private val _isSettings = MutableStateFlow(false)
     val isSettings: StateFlow<Boolean> = _isSettings.asStateFlow()
 
+    private val _isLineGraph = MutableStateFlow(false)
+    val isLineGraph: StateFlow<Boolean> = _isLineGraph.asStateFlow()
+
     private val _allEntries = MutableStateFlow<List<Entry>>(emptyList())
     val allEntries: StateFlow<List<Entry>> = _allEntries.asStateFlow()
 
@@ -102,6 +105,17 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
 
     fun exitHistory() {
         _isHistory.value = false
+    }
+
+    fun showLineGraph() {
+        viewModelScope.launch {
+            _allEntries.value = repository.getAllEntries()
+            _isLineGraph.value = true
+        }
+    }
+
+    fun exitLineGraph() {
+        _isLineGraph.value = false
     }
 
     fun openSettings() {

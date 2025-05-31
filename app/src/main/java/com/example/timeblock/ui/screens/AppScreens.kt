@@ -18,6 +18,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.foundation.Canvas
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import com.example.timeblock.ui.theme.BroccoliGreen
+import com.example.timeblock.ui.theme.SteakRed
+import com.example.timeblock.ui.theme.StepBlack
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
@@ -675,7 +681,12 @@ fun HistoryChart(entries: List<Entry>, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun HistoryScreen(viewModel: HistoryViewModel, weight: String, onBack: () -> Unit) {
+fun HistoryScreen(
+    viewModel: HistoryViewModel,
+    weight: String,
+    onBack: () -> Unit,
+    onShowGraphs: () -> Unit
+) {
     val entries by viewModel.entries.collectAsState()
     var range by remember { mutableStateOf(HistoryRange.MAX) }
     var showPicker by remember { mutableStateOf(false) }
@@ -738,10 +749,6 @@ fun HistoryScreen(viewModel: HistoryViewModel, weight: String, onBack: () -> Uni
                     viewModel.loadEntries(HistoryRange.DAYS_5)
                 }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            HistoryChart(entries)
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -812,6 +819,15 @@ fun HistoryScreen(viewModel: HistoryViewModel, weight: String, onBack: () -> Uni
             }
         }
 
+        ExtendedFloatingActionButton(
+            onClick = onShowGraphs,
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(16.dp)
+        ) {
+            Text(text = "\uD83D\uDCC8 Line Graphs")
+        }
+
         FloatingActionButton(
             onClick = { showPicker = true },
             modifier = Modifier
@@ -830,6 +846,88 @@ fun HistoryScreen(viewModel: HistoryViewModel, weight: String, onBack: () -> Uni
                     editingEntry = null
                 }
             )
+        }
+    }
+}
+
+@Composable
+fun LineGraphScreen(viewModel: HistoryViewModel, onBack: () -> Unit) {
+    val entries by viewModel.entries.collectAsState()
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) {
+                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Line Graphs",
+                style = MaterialTheme.typography.headlineMedium
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        LineGraph(entries = entries, modifier = Modifier
+            .fillMaxWidth()
+            .height(250.dp))
+    }
+}
+
+@Composable
+fun LineGraph(entries: List<Entry>, modifier: Modifier = Modifier) {
+    val broccoliGreen = BroccoliGreen
+    val steakRed = SteakRed
+    val stepColor = StepBlack
+    val sorted = entries.sortedBy { it.timeCreated }
+    val maxValue = listOf(
+        sorted.maxOfOrNull { it.steps } ?: 0,
+        sorted.maxOfOrNull { it.proteinGrams } ?: 0,
+        sorted.maxOfOrNull { it.vegetableServings } ?: 0
+    ).maxOrNull()?.coerceAtLeast(6000) ?: 6000
+
+    Column(modifier = modifier) {
+        Canvas(modifier = Modifier.fillMaxWidth().weight(1f)) {
+            if (sorted.isEmpty()) return@Canvas
+            val xStep = if (sorted.size > 1) size.width / (sorted.size - 1) else 0f
+            val vegPath = Path()
+            val protPath = Path()
+            val stepPath = Path()
+
+            sorted.forEachIndexed { index, entry ->
+                val x = index * xStep
+                fun scale(v: Int): Float = size.height - (v.toFloat() / maxValue) * size.height
+                val vegY = scale(entry.vegetableServings)
+                val protY = scale(entry.proteinGrams)
+                val stepY = scale(entry.steps.coerceAtLeast(6000))
+                if (index == 0) {
+                    vegPath.moveTo(x, vegY)
+                    protPath.moveTo(x, protY)
+                    stepPath.moveTo(x, stepY)
+                } else {
+                    vegPath.lineTo(x, vegY)
+                    protPath.lineTo(x, protY)
+                    stepPath.lineTo(x, stepY)
+                }
+            }
+
+            drawPath(vegPath, color = broccoliGreen, style = Stroke(width = 4f))
+            drawPath(protPath, color = steakRed, style = Stroke(width = 4f))
+            drawPath(stepPath, color = stepColor, style = Stroke(width = 4f))
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            sorted.forEach { entry ->
+                val ldt = entry.timeCreated.toKotlinInstant().toLocalDateTime(TimeZone.currentSystemDefault())
+                val label = "%02d/%02d".format(ldt.monthNumber, ldt.dayOfMonth)
+                Text(label, style = MaterialTheme.typography.labelSmall)
+            }
         }
     }
 }

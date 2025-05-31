@@ -21,6 +21,7 @@ import com.example.timeblock.ui.screens.UserSetupScreen
 import com.example.timeblock.ui.screens.HistoryScreen
 import com.example.timeblock.ui.screens.SettingsScreen
 import com.example.timeblock.ui.HistoryViewModel
+import com.example.timeblock.ui.screens.LineGraphScreen
 import com.example.timeblock.ui.theme.TimeBlockTheme
 
 class MainActivity : ComponentActivity() {
@@ -64,6 +65,7 @@ fun TimeBlockApp(
     val uiState by viewModel.uiState.collectAsState()
     val isHistory by viewModel.isHistory.collectAsState()
     val isSettings by viewModel.isSettings.collectAsState()
+    val isLineGraph by viewModel.isLineGraph.collectAsState()
 
     when (uiState) {
         is MainViewModel.UiState.Loading -> {
@@ -83,8 +85,15 @@ fun TimeBlockApp(
                 SettingsScreen(user = user,
                     onSave = { name, weight -> viewModel.updateUser(user, name, weight); viewModel.closeSettings() },
                     onBack = { viewModel.closeSettings() })
+            } else if (isLineGraph) {
+                LineGraphScreen(viewModel = historyViewModel, onBack = { viewModel.exitLineGraph() })
             } else if (isHistory) {
-                HistoryScreen(viewModel = historyViewModel, weight = user.weight, onBack = { viewModel.exitHistory() })
+                HistoryScreen(
+                    viewModel = historyViewModel,
+                    weight = user.weight,
+                    onBack = { viewModel.exitHistory() },
+                    onShowGraphs = { viewModel.showLineGraph() }
+                )
             } else {
                 HomeScreen(
                     user = user,
