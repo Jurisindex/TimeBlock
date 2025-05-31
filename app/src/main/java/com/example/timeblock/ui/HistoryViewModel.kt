@@ -27,11 +27,12 @@ class HistoryViewModel(private val repository: Repository) : ViewModel() {
     fun loadEntries(range: HistoryRange = currentRange) {
         viewModelScope.launch {
             currentRange = range
-            _entries.value = when (range) {
+            val list = when (range) {
                 HistoryRange.MAX -> repository.getAllEntries()
                 HistoryRange.DAYS_30 -> repository.getEntriesSince(30)
                 HistoryRange.DAYS_5 -> repository.getEntriesSince(5)
             }
+            _entries.value = list.sortedByDescending { it.timeCreated }
         }
     }
 

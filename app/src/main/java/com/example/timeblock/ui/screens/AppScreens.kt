@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.window.Dialog
 import com.example.timeblock.data.entity.Entry
 import com.example.timeblock.data.entity.User
@@ -689,6 +691,8 @@ fun HistoryScreen(
     onShowGraphs: () -> Unit
 ) {
     val entries by viewModel.entries.collectAsState()
+    // Always show the full history regardless of previous graph range
+    LaunchedEffect(Unit) { viewModel.loadEntries(HistoryRange.MAX) }
     var showPicker by remember { mutableStateOf(false) }
     var editingEntry by remember { mutableStateOf<Entry?>(null) }
     val context = LocalContext.current
@@ -732,7 +736,12 @@ fun HistoryScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            LazyColumn {
+            val listState = rememberLazyListState()
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(bottom = 80.dp)
+            ) {
                 items(entries) { entry ->
                     Card(
                         modifier = Modifier
@@ -872,23 +881,66 @@ fun LineGraphScreen(viewModel: HistoryViewModel, onBack: () -> Unit) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        LineGraph(entries = entries, modifier = Modifier
-            .fillMaxWidth()
-            .height(250.dp))
+        MetricLineGraph(
+            label = "Protein",
+            entries = entries,
+            valueSelector = { it.proteinGrams },
+            color = SteakRed,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(150.dp)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        MetricLineGraph(
+            label = "Veggies",
+            entries = entries,
+            valueSelector = { it.vegetableServings },
+            color = BroccoliGreen,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(150.dp)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        MetricLineGraph(
+            label = "Steps",
+            entries = entries,
+            valueSelector = { it.steps },
+            color = StepBlue,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(150.dp)
+        )
     }
 }
 
 @Composable
-fun LineGraph(entries: List<Entry>, modifier: Modifier = Modifier) {
-    val broccoliGreen = BroccoliGreen
-    val steakRed = SteakRed
-    val stepColor = StepBlue
+fun MetricLineGraph(
+    label: String,
+    entries: List<Entry>,
+    valueSelector: (Entry) -> Int,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        Text(label, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(4.dp))
+        SingleLineGraph(entries = entries, valueSelector = valueSelector, color = color, modifier = Modifier.fillMaxWidth().height(100.dp))
+    }
+}
+
+@Composable
+fun SingleLineGraph(
+    entries: List<Entry>,
+    valueSelector: (Entry) -> Int,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
     val sorted = entries.sortedBy { it.timeCreated }
-    val maxValue = listOf(
-        sorted.maxOfOrNull { it.steps } ?: 0,
-        sorted.maxOfOrNull { it.proteinGrams } ?: 0,
-        sorted.maxOfOrNull { it.vegetableServings } ?: 0
-    ).maxOrNull()?.coerceAtLeast(6000) ?: 6000
+    val maxValue = sorted.maxOfOrNull { valueSelector(it) }?.coerceAtLeast(1) ?: 1
 
     Column(modifier = modifier) {
         Row(modifier = Modifier.weight(1f)) {
@@ -909,30 +961,19 @@ fun LineGraph(entries: List<Entry>, modifier: Modifier = Modifier) {
                 .fillMaxHeight()) {
             if (sorted.isEmpty()) return@Canvas
             val xStep = if (sorted.size > 1) size.width / (sorted.size - 1) else 0f
-            val vegPath = Path()
-            val protPath = Path()
-            val stepPath = Path()
+            val path = Path()
 
             sorted.forEachIndexed { index, entry ->
                 val x = index * xStep
-                fun scale(v: Int): Float = size.height - (v.toFloat() / maxValue) * size.height
-                val vegY = scale(entry.vegetableServings)
-                val protY = scale(entry.proteinGrams)
-                val stepY = scale(entry.steps.coerceAtLeast(6000))
+                val y = size.height - (valueSelector(entry).toFloat() / maxValue) * size.height
                 if (index == 0) {
-                    vegPath.moveTo(x, vegY)
-                    protPath.moveTo(x, protY)
-                    stepPath.moveTo(x, stepY)
+                    path.moveTo(x, y)
                 } else {
-                    vegPath.lineTo(x, vegY)
-                    protPath.lineTo(x, protY)
-                    stepPath.lineTo(x, stepY)
+                    path.lineTo(x, y)
                 }
             }
 
-            drawPath(vegPath, color = broccoliGreen, style = Stroke(width = 6f))
-            drawPath(protPath, color = steakRed, style = Stroke(width = 6f))
-            drawPath(stepPath, color = stepColor, style = Stroke(width = 6f))
+            drawPath(path, color = color, style = Stroke(width = 6f))
         }
         }
 
