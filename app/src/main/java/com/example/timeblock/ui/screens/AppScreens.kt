@@ -846,7 +846,10 @@ fun HistoryScreen(
         }
 
         ExtendedFloatingActionButton(
-            onClick = onShowGraphs,
+            onClick = {
+                viewModel.loadEntries(viewModel.currentRange.value, updateCurrentRange = false)
+                onShowGraphs()
+            },
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(16.dp)
@@ -884,9 +887,6 @@ fun HistoryScreen(
 fun LineGraphScreen(viewModel: HistoryViewModel, onBack: () -> Unit) {
     val entries by viewModel.entries.collectAsState()
     val range by viewModel.currentRange.collectAsState()
-    LaunchedEffect(Unit) {
-        viewModel.loadEntries(viewModel.currentRange.value, updateCurrentRange = false)
-    }
     Column(
         modifier = Modifier
             .fillMaxSize()
