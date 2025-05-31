@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.*
@@ -18,6 +19,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
@@ -34,6 +36,9 @@ import com.example.timeblock.util.proteinGoalForWeightString
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.toKotlinInstant
+import android.app.DatePickerDialog
+import java.util.Calendar
+import java.time.LocalDate
 
 @Composable
 fun LoadingScreen() {
@@ -600,104 +605,137 @@ fun HistoryChart(entries: List<Entry>, modifier: Modifier = Modifier) {
 fun HistoryScreen(viewModel: HistoryViewModel, weight: String, onBack: () -> Unit) {
     val entries by viewModel.entries.collectAsState()
     var range by remember { mutableStateOf(HistoryRange.MAX) }
+    var showPicker by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) {
-                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "History",
-                style = MaterialTheme.typography.headlineMedium
-            )
+    if (showPicker) {
+        val calendar = remember { Calendar.getInstance() }
+        val dialog = remember {
+            DatePickerDialog(
+                context,
+                { _, year, month, dayOfMonth ->
+                    viewModel.addEntry(LocalDate.of(year, month + 1, dayOfMonth))
+                    showPicker = false
+                },
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DAY_OF_MONTH)
+            ).apply { setOnCancelListener { showPicker = false } }
         }
+        DisposableEffect(Unit) {
+            dialog.show()
+            onDispose { }
+        }
+    }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
-            FilterButton("MAX", range == HistoryRange.MAX, modifier = Modifier.weight(1f)) {
-                range = HistoryRange.MAX
-                viewModel.loadEntries(HistoryRange.MAX)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBack) {
+                    Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "History",
+                    style = MaterialTheme.typography.headlineMedium
+                )
             }
-            FilterButton("30d", range == HistoryRange.DAYS_30, modifier = Modifier.weight(1f)) {
-                range = HistoryRange.DAYS_30
-                viewModel.loadEntries(HistoryRange.DAYS_30)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterButton("MAX", range == HistoryRange.MAX, modifier = Modifier.weight(1f)) {
+                    range = HistoryRange.MAX
+                    viewModel.loadEntries(HistoryRange.MAX)
+                }
+                FilterButton("30d", range == HistoryRange.DAYS_30, modifier = Modifier.weight(1f)) {
+                    range = HistoryRange.DAYS_30
+                    viewModel.loadEntries(HistoryRange.DAYS_30)
+                }
+                FilterButton("5d", range == HistoryRange.DAYS_5, modifier = Modifier.weight(1f)) {
+                    range = HistoryRange.DAYS_5
+                    viewModel.loadEntries(HistoryRange.DAYS_5)
+                }
             }
-            FilterButton("5d", range == HistoryRange.DAYS_5, modifier = Modifier.weight(1f)) {
-                range = HistoryRange.DAYS_5
-                viewModel.loadEntries(HistoryRange.DAYS_5)
-            }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        HistoryChart(entries)
+            HistoryChart(entries)
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        LazyColumn {
-            items(entries) { entry ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Protein: ${entry.proteinGrams}g, Veggies: ${entry.vegetableServings}, Steps: ${entry.steps}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        val ldt = entry.timeCreated
-                            .toKotlinInstant()
-                            .toLocalDateTime(TimeZone.currentSystemDefault())
-                        val formattedDate = "%04d-%02d-%02d %02d:%02d".format(
-                            ldt.year,
-                            ldt.monthNumber,
-                            ldt.dayOfMonth,
-                            ldt.hour,
-                            ldt.minute
-                        )
-                        val clipboard = LocalClipboardManager.current
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+            LazyColumn {
+                items(entries) { entry ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
                             Text(
-                                text = "Date: $formattedDate",
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.weight(1f)
+                                text = "Protein: ${entry.proteinGrams}g, Veggies: ${entry.vegetableServings}, Steps: ${entry.steps}",
+                                style = MaterialTheme.typography.bodyMedium
                             )
-                            Text(
-                                text = weight,
-                                style = MaterialTheme.typography.bodySmall,
-                                textAlign = TextAlign.End,
-                                modifier = Modifier.weight(1f)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            val ldt = entry.timeCreated
+                                .toKotlinInstant()
+                                .toLocalDateTime(TimeZone.currentSystemDefault())
+                            val formattedDate = "%04d-%02d-%02d %02d:%02d".format(
+                                ldt.year,
+                                ldt.monthNumber,
+                                ldt.dayOfMonth,
+                                ldt.hour,
+                                ldt.minute
                             )
-                            IconButton(onClick = {
-                                val copyText = """
+                            val clipboard = LocalClipboardManager.current
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Date: $formattedDate",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Text(
+                                    text = weight,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    textAlign = TextAlign.End,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                IconButton(onClick = {
+                                    val copyText = """
                                     Date: $formattedDate
                                     Protein: ${entry.proteinGrams}g
                                     Veggies: ${entry.vegetableServings}
                                     Steps: ${entry.steps}
                                 """.trimIndent()
-                                clipboard.setText(AnnotatedString(copyText))
-                            }) {
-                                Icon(imageVector = Icons.Default.ContentPaste, contentDescription = "Copy")
+                                    clipboard.setText(AnnotatedString(copyText))
+                                }) {
+                                    Icon(imageVector = Icons.Default.ContentPaste, contentDescription = "Copy")
+                                }
                             }
                         }
                     }
                 }
             }
+        }
+
+        FloatingActionButton(
+            onClick = { showPicker = true },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+        ) {
+            Icon(imageVector = Icons.Default.Add, contentDescription = "Add")
         }
     }
 }

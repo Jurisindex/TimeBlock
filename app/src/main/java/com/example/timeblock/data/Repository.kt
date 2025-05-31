@@ -114,5 +114,17 @@ class Repository(private val userDao: UserDao, private val entryDao: EntryDao) {
         return entryDao.getEntriesBetween(start, end)
     }
 
+    suspend fun insertEntryOn(date: LocalDate) {
+        val instant = date.atTime(0, 1).atZone(ZoneId.systemDefault()).toInstant()
+        val entry = Entry(
+            proteinGrams = 0,
+            vegetableServings = 0,
+            steps = 0,
+            timeCreated = instant,
+            timeModified = instant
+        )
+        entryDao.insert(entry)
+    }
+
 
 }

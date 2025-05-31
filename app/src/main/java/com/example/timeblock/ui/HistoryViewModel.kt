@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.timeblock.data.Repository
 import com.example.timeblock.data.entity.Entry
+import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,6 +32,13 @@ class HistoryViewModel(private val repository: Repository) : ViewModel() {
                 HistoryRange.DAYS_30 -> repository.getEntriesSince(30)
                 HistoryRange.DAYS_5 -> repository.getEntriesSince(5)
             }
+        }
+    }
+
+    fun addEntry(date: LocalDate) {
+        viewModelScope.launch {
+            repository.insertEntryOn(date)
+            loadEntries(currentRange)
         }
     }
 
