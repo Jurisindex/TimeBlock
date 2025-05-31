@@ -9,6 +9,7 @@ import java.time.Instant
 data class Entry(
     @PrimaryKey(autoGenerate = true) val entryId: Int = 0,
     @ColumnInfo(name = "protein_grams") val proteinGrams: Int,
+    @ColumnInfo(name = "carbs_grams") val carbsGrams: Int,
     @ColumnInfo(name = "vegetable_servings") val vegetableServings: Int,
     @ColumnInfo(name = "steps") val steps: Int,
     @ColumnInfo(name = "time_created") val timeCreated: Instant,

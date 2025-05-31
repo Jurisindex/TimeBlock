@@ -192,6 +192,7 @@ fun HomeScreen(
                     val copyText = """
                         Date: $formattedDate
                         Protein: ${trackingData.proteinGrams}g
+                        Carbs: ${trackingData.carbsGrams}g
                         Veggies: ${trackingData.vegetableServings}
                         Steps: ${trackingData.steps}
                     """.trimIndent()
@@ -230,6 +231,10 @@ fun HomeScreen(
                             value = "${trackingData.proteinGrams}g/$goal g"
                         )
                         StatItem(
+                            label = "Carbs",
+                            value = "${trackingData.carbsGrams}g"
+                        )
+                        StatItem(
                             label = "Veggies",
                             value = "${trackingData.vegetableServings} serv/5"
                         )
@@ -250,7 +255,7 @@ fun HomeScreen(
             Text("View History")
         }
 
-        // Bottom third with 3 buttons
+        // Bottom third with 4 buttons
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -262,6 +267,12 @@ fun HomeScreen(
                 label = "Protein",
                 modifier = Modifier.weight(1f),
                 onClick = { onEditModeSelected(MainViewModel.EditMode.PROTEIN) }
+            )
+
+            TrackingButton(
+                label = "Carbs",
+                modifier = Modifier.weight(1f),
+                onClick = { onEditModeSelected(MainViewModel.EditMode.CARBS) }
             )
 
             TrackingButton(
@@ -284,6 +295,7 @@ fun HomeScreen(
             mode = currentEditMode,
             currentValue = when (currentEditMode) {
                 MainViewModel.EditMode.PROTEIN -> trackingData.proteinGrams
+                MainViewModel.EditMode.CARBS -> trackingData.carbsGrams
                 MainViewModel.EditMode.VEGETABLES -> trackingData.vegetableServings
                 MainViewModel.EditMode.STEPS -> trackingData.steps
             },
@@ -366,12 +378,14 @@ fun EditDialog(
     var inputValue by remember(mode) { mutableStateOf("") }
     val title = when (mode) {
         MainViewModel.EditMode.PROTEIN -> "Update Protein"
+        MainViewModel.EditMode.CARBS -> "Update Carbs"
         MainViewModel.EditMode.VEGETABLES -> "Update Vegetable Servings"
         MainViewModel.EditMode.STEPS -> "Update Steps"
     }
 
     val unit = when (mode) {
         MainViewModel.EditMode.PROTEIN -> "grams"
+        MainViewModel.EditMode.CARBS -> "grams"
         MainViewModel.EditMode.VEGETABLES -> "servings"
         MainViewModel.EditMode.STEPS -> "steps"
     }
@@ -520,10 +534,11 @@ fun WeightDialog(onDismiss: () -> Unit, onSet: (String) -> Unit) {
 fun EditEntryDialog(
     entry: Entry,
     onDismiss: () -> Unit,
-    onSave: (protein: Int, vegetables: Int, steps: Int) -> Unit,
+    onSave: (protein: Int, carbs: Int, vegetables: Int, steps: Int) -> Unit,
     onDelete: () -> Unit
 ) {
     var proteinValue by remember { mutableStateOf(entry.proteinGrams.toString()) }
+    var carbValue by remember { mutableStateOf(entry.carbsGrams.toString()) }
     var vegValue by remember { mutableStateOf(entry.vegetableServings.toString()) }
     var stepsValue by remember { mutableStateOf(entry.steps.toString()) }
 
@@ -540,6 +555,16 @@ fun EditEntryDialog(
                     value = proteinValue,
                     onValueChange = { if (it.all { c -> c.isDigit() }) proteinValue = it },
                     label = { Text("Protein (g)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = carbValue,
+                    onValueChange = { if (it.all { c -> c.isDigit() }) carbValue = it },
+                    label = { Text("Carbs (g)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -582,6 +607,7 @@ fun EditEntryDialog(
                     Button(onClick = {
                         onSave(
                             proteinValue.toIntOrNull() ?: entry.proteinGrams,
+                            carbValue.toIntOrNull() ?: entry.carbsGrams,
                             vegValue.toIntOrNull() ?: entry.vegetableServings,
                             stepsValue.toIntOrNull() ?: entry.steps
                         )
@@ -792,7 +818,7 @@ fun HistoryScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Protein: ${entry.proteinGrams}g, Veggies: ${entry.vegetableServings}, Steps: ${entry.steps}",
+                                    text = "Protein: ${entry.proteinGrams}g, Carbs: ${entry.carbsGrams}g, Veggies: ${entry.vegetableServings}, Steps: ${entry.steps}",
                                     style = MaterialTheme.typography.bodyMedium,
                                     modifier = Modifier.weight(1f)
                                 )
@@ -831,6 +857,7 @@ fun HistoryScreen(
                                     val copyText = """
                                     Date: $formattedDate
                                     Protein: ${entry.proteinGrams}g
+                                    Carbs: ${entry.carbsGrams}g
                                     Veggies: ${entry.vegetableServings}
                                     Steps: ${entry.steps}
                                 """.trimIndent()
@@ -870,8 +897,8 @@ fun HistoryScreen(
             EditEntryDialog(
                 entry = editingEntry!!,
                 onDismiss = { editingEntry = null },
-                onSave = { p, v, s ->
-                    viewModel.updateEntry(editingEntry!!, p, v, s)
+                onSave = { p, c, v, s ->
+                    viewModel.updateEntry(editingEntry!!, p, c, v, s)
                     editingEntry = null
                 },
                 onDelete = {
@@ -927,6 +954,18 @@ fun LineGraphScreen(viewModel: HistoryViewModel, onBack: () -> Unit) {
             entries = entries,
             valueSelector = { it.proteinGrams },
             color = SteakRed,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(150.dp)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        MetricLineGraph(
+            label = "Carbs",
+            entries = entries,
+            valueSelector = { it.carbsGrams },
+            color = Color.Magenta,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(150.dp)

@@ -46,9 +46,9 @@ class HistoryViewModel(private val repository: Repository) : ViewModel() {
         }
     }
 
-    fun updateEntry(entry: Entry, protein: Int, vegetables: Int, steps: Int) {
+    fun updateEntry(entry: Entry, protein: Int, carbs: Int, vegetables: Int, steps: Int) {
         viewModelScope.launch {
-            repository.updateEntry(entry, protein, vegetables, steps)
+            repository.updateEntry(entry, protein, carbs, vegetables, steps)
             loadEntries(_currentRange.value)
         }
     }

@@ -54,8 +54,9 @@ class Repository(private val userDao: UserDao, private val entryDao: EntryDao) {
             todayEntries.first()
         } else {
             val now = Instant.now()
-            val entry = Entry(
+           val entry = Entry(
                 proteinGrams = 0,
+                carbsGrams = 0,
                 vegetableServings = 0,
                 steps = 0,
                 timeCreated = now,
@@ -70,6 +71,16 @@ class Repository(private val userDao: UserDao, private val entryDao: EntryDao) {
         val entry = getOrCreateTodayEntry()
         val updatedEntry = entry.copy(
             proteinGrams = if (isAddition) entry.proteinGrams + value else value,
+            timeModified = Instant.now()
+        )
+        entryDao.insert(updatedEntry)
+        return updatedEntry
+    }
+
+    suspend fun updateCarbs(value: Int, isAddition: Boolean): Entry {
+        val entry = getOrCreateTodayEntry()
+        val updatedEntry = entry.copy(
+            carbsGrams = if (isAddition) entry.carbsGrams + value else value,
             timeModified = Instant.now()
         )
         entryDao.insert(updatedEntry)
@@ -96,9 +107,10 @@ class Repository(private val userDao: UserDao, private val entryDao: EntryDao) {
         return updatedEntry
     }
 
-    suspend fun updateEntry(entry: Entry, protein: Int, vegetables: Int, steps: Int): Entry {
+    suspend fun updateEntry(entry: Entry, protein: Int, carbs: Int, vegetables: Int, steps: Int): Entry {
         val updated = entry.copy(
             proteinGrams = protein,
+            carbsGrams = carbs,
             vegetableServings = vegetables,
             steps = steps,
             timeModified = Instant.now()
@@ -136,6 +148,7 @@ class Repository(private val userDao: UserDao, private val entryDao: EntryDao) {
         val instant = date.atTime(0, 1).atZone(ZoneId.systemDefault()).toInstant()
         val entry = Entry(
             proteinGrams = 0,
+            carbsGrams = 0,
             vegetableServings = 0,
             steps = 0,
             timeCreated = instant,

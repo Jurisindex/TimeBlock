@@ -87,6 +87,7 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
         viewModelScope.launch {
             val updatedEntry = when (_currentEditMode.value) {
                 EditMode.PROTEIN -> repository.updateProtein(value, isAddition)
+                EditMode.CARBS -> repository.updateCarbs(value, isAddition)
                 EditMode.VEGETABLES -> repository.updateVegetables(value, isAddition)
                 EditMode.STEPS -> repository.updateSteps(value, isAddition)
                 null -> return@launch
@@ -140,7 +141,7 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
     }
 
     enum class EditMode {
-        PROTEIN, VEGETABLES, STEPS
+        PROTEIN, CARBS, VEGETABLES, STEPS
     }
 
     class MainViewModelFactory(private val repository: Repository) : ViewModelProvider.Factory {
