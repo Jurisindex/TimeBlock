@@ -125,7 +125,14 @@ class Repository(private val userDao: UserDao, private val entryDao: EntryDao) {
         return entryDao.getEntriesBetween(start, end)
     }
 
-    suspend fun insertEntryOn(date: LocalDate) {
+    suspend fun insertEntryOn(date: LocalDate): Boolean {
+        val startOfDay = date.atStartOfDay(ZoneId.systemDefault()).toInstant()
+        val endOfDay = date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().minusMillis(1)
+        val existing = entryDao.getEntriesBetween(startOfDay, endOfDay)
+        if (existing.isNotEmpty()) {
+            return false
+        }
+
         val instant = date.atTime(0, 1).atZone(ZoneId.systemDefault()).toInstant()
         val entry = Entry(
             proteinGrams = 0,
@@ -135,6 +142,11 @@ class Repository(private val userDao: UserDao, private val entryDao: EntryDao) {
             timeModified = instant
         )
         entryDao.insert(entry)
+        return true
+    }
+
+    suspend fun deleteEntry(entry: Entry) {
+        entryDao.deleteById(entry.entryId)
     }
 
 
