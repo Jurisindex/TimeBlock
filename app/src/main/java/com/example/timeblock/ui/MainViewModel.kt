@@ -11,9 +11,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 class MainViewModel(private val repository: Repository) : ViewModel() {
 
+    private val loadMutex = Mutex()
     private var lastLoadedDay: LocalDate? = null
 
     private val _uiState = MutableStateFlow<UiState>(UiState.Loading)
@@ -55,8 +58,10 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
 
     private fun loadTodayEntry() {
         viewModelScope.launch {
-            _trackingData.value = repository.getOrCreateTodayEntry()
-            lastLoadedDay = LocalDate.now()
+            loadMutex.withLock {
+                _trackingData.value = repository.getOrCreateTodayEntry()
+                lastLoadedDay = LocalDate.now()
+            }
         }
     }
 
