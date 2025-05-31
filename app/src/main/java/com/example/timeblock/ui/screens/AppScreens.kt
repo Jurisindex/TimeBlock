@@ -979,10 +979,12 @@ fun SingleLineGraph(
 ) {
     val sorted = entries.sortedBy { it.timeCreated }
     val maxValue = sorted.maxOfOrNull { valueSelector(it) }?.coerceAtLeast(1) ?: 1
+    val minValue = sorted.minOfOrNull { valueSelector(it) } ?: 0
+    val range = (maxValue - minValue).coerceAtLeast(1)
 
     Column(modifier = modifier) {
         Row(modifier = Modifier.weight(1f)) {
-            val step = (maxValue / 4f).roundToInt()
+            val step = range / 4f
             Column(
                 modifier = Modifier
                     .fillMaxHeight()
@@ -990,7 +992,8 @@ fun SingleLineGraph(
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 for (i in 4 downTo 0) {
-                    Text(text = "${i * step}", style = MaterialTheme.typography.labelSmall)
+                    val value = (minValue + step * i).roundToInt()
+                    Text(text = "$value", style = MaterialTheme.typography.labelSmall)
                 }
             }
 
@@ -1000,10 +1003,23 @@ fun SingleLineGraph(
             if (sorted.isEmpty()) return@Canvas
             val xStep = if (sorted.size > 1) size.width / (sorted.size - 1) else 0f
             val path = Path()
+            val strokeWidth = with(LocalDensity.current) { 1.dp.toPx() }
+
+            // Draw horizontal grid lines
+            for (i in 0..4) {
+                val value = minValue + step * i
+                val yLine = size.height - ((value - minValue) / range.toFloat()) * size.height
+                drawLine(
+                    color = Color.LightGray,
+                    start = Offset(0f, yLine),
+                    end = Offset(size.width, yLine),
+                    strokeWidth = strokeWidth
+                )
+            }
 
             sorted.forEachIndexed { index, entry ->
                 val x = index * xStep
-                val y = size.height - (valueSelector(entry).toFloat() / maxValue) * size.height
+                val y = size.height - ((valueSelector(entry) - minValue).toFloat() / range.toFloat()) * size.height
                 if (index == 0) {
                     path.moveTo(x, y)
                 } else {
