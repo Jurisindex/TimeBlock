@@ -20,4 +20,7 @@ interface EntryDao {
 
     @Query("SELECT * FROM Entry WHERE entryId = :id")
     suspend fun getEntryById(id: Int): Entry?
+
+    @Query("DELETE FROM Entry WHERE entryId = :id")
+    suspend fun deleteById(id: Int)
 }

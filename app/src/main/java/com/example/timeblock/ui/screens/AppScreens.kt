@@ -520,11 +520,14 @@ fun WeightDialog(onDismiss: () -> Unit, onSet: (String) -> Unit) {
 fun EditEntryDialog(
     entry: Entry,
     onDismiss: () -> Unit,
-    onSave: (protein: Int, vegetables: Int, steps: Int) -> Unit
+    onSave: (protein: Int, vegetables: Int, steps: Int) -> Unit,
+    onDelete: () -> Unit
 ) {
     var proteinValue by remember { mutableStateOf(entry.proteinGrams.toString()) }
     var vegValue by remember { mutableStateOf(entry.vegetableServings.toString()) }
     var stepsValue by remember { mutableStateOf(entry.steps.toString()) }
+
+    var showConfirm by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface) {
@@ -564,6 +567,18 @@ fun EditEntryDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    Button(
+                        onClick = { showConfirm = true },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError
+                        )
+                    ) {
+                        Text("Delete")
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
                     Button(onClick = {
                         onSave(
                             proteinValue.toIntOrNull() ?: entry.proteinGrams,
@@ -581,6 +596,28 @@ fun EditEntryDialog(
                         contentColor = MaterialTheme.colorScheme.onError
                     )) {
                         Text("Cancel")
+                    }
+                }
+            }
+        }
+    }
+
+    if (showConfirm) {
+        Dialog(onDismissRequest = { showConfirm = false }) {
+            Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface) {
+                Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Are you sure you want to delete this entry?")
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        Button(onClick = { showConfirm = false }) { Text("No") }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(onClick = {
+                            showConfirm = false
+                            onDelete()
+                        }, colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError
+                        )) { Text("Yes") }
                     }
                 }
             }
@@ -833,6 +870,10 @@ fun HistoryScreen(
                 onSave = { p, v, s ->
                     viewModel.updateEntry(editingEntry!!, p, v, s)
                     editingEntry = null
+                },
+                onDelete = {
+                    viewModel.deleteEntry(editingEntry!!)
+                    editingEntry = null
                 }
             )
         }
@@ -842,7 +883,7 @@ fun HistoryScreen(
 @Composable
 fun LineGraphScreen(viewModel: HistoryViewModel, onBack: () -> Unit) {
     val entries by viewModel.entries.collectAsState()
-    var range by remember { mutableStateOf(HistoryRange.DAYS_5) }
+    val range by viewModel.currentRange.collectAsState()
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -866,15 +907,12 @@ fun LineGraphScreen(viewModel: HistoryViewModel, onBack: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             FilterButton("5d", range == HistoryRange.DAYS_5, modifier = Modifier.weight(1f)) {
-                range = HistoryRange.DAYS_5
                 viewModel.loadEntries(HistoryRange.DAYS_5)
             }
             FilterButton("30d", range == HistoryRange.DAYS_30, modifier = Modifier.weight(1f)) {
-                range = HistoryRange.DAYS_30
                 viewModel.loadEntries(HistoryRange.DAYS_30)
             }
             FilterButton("MAX", range == HistoryRange.MAX, modifier = Modifier.weight(1f)) {
-                range = HistoryRange.MAX
                 viewModel.loadEntries(HistoryRange.MAX)
             }
         }

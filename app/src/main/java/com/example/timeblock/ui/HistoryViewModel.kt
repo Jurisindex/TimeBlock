@@ -18,15 +18,16 @@ class HistoryViewModel(private val repository: Repository) : ViewModel() {
     private val _entries = MutableStateFlow<List<Entry>>(emptyList())
     val entries: StateFlow<List<Entry>> = _entries.asStateFlow()
 
-    private var currentRange: HistoryRange = HistoryRange.DAYS_5
+    private val _currentRange = MutableStateFlow(HistoryRange.DAYS_5)
+    val currentRange: StateFlow<HistoryRange> = _currentRange.asStateFlow()
 
     init {
         loadEntries()
     }
 
-    fun loadEntries(range: HistoryRange = currentRange) {
+    fun loadEntries(range: HistoryRange = _currentRange.value) {
         viewModelScope.launch {
-            currentRange = range
+            _currentRange.value = range
             val list = when (range) {
                 HistoryRange.MAX -> repository.getAllEntries()
                 HistoryRange.DAYS_30 -> repository.getEntriesSince(30)
@@ -39,14 +40,21 @@ class HistoryViewModel(private val repository: Repository) : ViewModel() {
     fun addEntry(date: LocalDate) {
         viewModelScope.launch {
             repository.insertEntryOn(date)
-            loadEntries(currentRange)
+            loadEntries(_currentRange.value)
         }
     }
 
     fun updateEntry(entry: Entry, protein: Int, vegetables: Int, steps: Int) {
         viewModelScope.launch {
             repository.updateEntry(entry, protein, vegetables, steps)
-            loadEntries(currentRange)
+            loadEntries(_currentRange.value)
+        }
+    }
+
+    fun deleteEntry(entry: Entry) {
+        viewModelScope.launch {
+            repository.deleteEntry(entry)
+            loadEntries(_currentRange.value)
         }
     }
 
