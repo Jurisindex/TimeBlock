@@ -13,7 +13,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.foundation.Canvas
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
@@ -23,7 +27,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.timeblock.data.entity.Entry
 import com.example.timeblock.data.entity.User
+import com.example.timeblock.data.ThemeMode
 import com.example.timeblock.ui.MainViewModel
+import com.example.timeblock.ui.HistoryViewModel
+import com.example.timeblock.ui.HistoryRange
 import com.example.timeblock.util.proteinGoalForWeightString
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -319,6 +326,22 @@ fun TrackingButton(
 }
 
 @Composable
+fun FilterButton(label: String, selected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val colors = if (selected) {
+        ButtonDefaults.buttonColors()
+    } else {
+        ButtonDefaults.outlinedButtonColors()
+    }
+    Button(
+        onClick = onClick,
+        colors = colors,
+        modifier = modifier
+    ) {
+        Text(label)
+    }
+}
+
+@Composable
 fun EditDialog(
     mode: MainViewModel.EditMode,
     currentValue: Int,
@@ -480,7 +503,19 @@ fun WeightDialog(onDismiss: () -> Unit, onSet: (String) -> Unit) {
 }
 
 @Composable
-fun SettingsScreen(user: User, onSave: (String, String) -> Unit, onBack: () -> Unit) {
+fun SettingsScreen(
+    user: User,
+    theme: ThemeMode,
+    onThemeChange: (ThemeMode) -> Unit,
+    garminEnabled: Boolean,
+    onGarminChange: (Boolean) -> Unit,
+    wordleShare: Boolean,
+    onWordleChange: (Boolean) -> Unit,
+    onExportDb: () -> Unit,
+    onImportDb: () -> Unit,
+    onSave: (String, String) -> Unit,
+    onBack: () -> Unit
+) {
     var name by remember { mutableStateOf(user.displayName) }
     var weightVal by remember { mutableStateOf(user.weight.takeWhile { it.isDigit() || it == '.' }) }
     var expanded by remember { mutableStateOf(false) }
@@ -546,11 +581,92 @@ fun SettingsScreen(user: User, onSave: (String, String) -> Unit, onBack: () -> U
             },
             modifier = Modifier.fillMaxWidth()
         ) { Text("Save") }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(text = "Theme", style = MaterialTheme.typography.titleMedium)
+        Row {
+            RadioButton(selected = theme == ThemeMode.SYSTEM, onClick = { onThemeChange(ThemeMode.SYSTEM) })
+            Text("System", modifier = Modifier.align(Alignment.CenterVertically))
+            Spacer(modifier = Modifier.width(8.dp))
+            RadioButton(selected = theme == ThemeMode.LIGHT, onClick = { onThemeChange(ThemeMode.LIGHT) })
+            Text("Light", modifier = Modifier.align(Alignment.CenterVertically))
+            Spacer(modifier = Modifier.width(8.dp))
+            RadioButton(selected = theme == ThemeMode.DARK, onClick = { onThemeChange(ThemeMode.DARK) })
+            Text("Dark", modifier = Modifier.align(Alignment.CenterVertically))
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Garmin Integration", modifier = Modifier.weight(1f))
+            Switch(checked = garminEnabled, onCheckedChange = onGarminChange)
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Wordle Share Format", modifier = Modifier.weight(1f))
+            Switch(checked = wordleShare, onCheckedChange = onWordleChange)
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = onExportDb, modifier = Modifier.fillMaxWidth()) {
+            Text("Export Database")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        var showImport by remember { mutableStateOf(false) }
+        Button(onClick = { showImport = true }, modifier = Modifier.fillMaxWidth()) {
+            Text("Import Database")
+        }
+        if (showImport) {
+            AlertDialog(
+                onDismissRequest = { showImport = false },
+                confirmButton = {
+                    TextButton(onClick = { showImport = false; onImportDb() }) { Text("Replace") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showImport = false }) { Text("Cancel") }
+                },
+                text = { Text("Importing will replace the existing database. Continue?") }
+            )
+        }
     }
 }
 
 @Composable
-fun HistoryScreen(entries: List<Entry>, weight: String, onBack: () -> Unit) {
+fun HistoryChart(entries: List<Entry>, modifier: Modifier = Modifier) {
+    val maxValue = entries.maxOfOrNull { it.proteinGrams } ?: 0
+    val density = LocalDensity.current
+    val barWidthPx = with(density) { 16.dp.toPx() }
+    val spacePx = with(density) { 4.dp.toPx() }
+    val barColor = MaterialTheme.colorScheme.primary
+
+    Canvas(modifier = modifier.height(150.dp).fillMaxWidth()) {
+        val maxHeight = size.height
+        val totalWidth = entries.size * barWidthPx + (entries.size - 1) * spacePx
+        val startX = (size.width - totalWidth).coerceAtLeast(0f) / 2f
+
+        entries.forEachIndexed { index, entry ->
+            val barHeight = if (maxValue == 0) 0f else (entry.proteinGrams / maxValue.toFloat()) * maxHeight
+            val x = startX + index * (barWidthPx + spacePx)
+            drawRect(
+                color = barColor,
+                topLeft = Offset(x, size.height - barHeight),
+                size = Size(barWidthPx, barHeight)
+            )
+        }
+    }
+}
+
+@Composable
+fun HistoryScreen(viewModel: HistoryViewModel, weight: String, onBack: () -> Unit) {
+    val entries by viewModel.entries.collectAsState()
+    var range by remember { mutableStateOf(HistoryRange.MAX) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -566,6 +682,30 @@ fun HistoryScreen(entries: List<Entry>, weight: String, onBack: () -> Unit) {
                 style = MaterialTheme.typography.headlineMedium
             )
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterButton("MAX", range == HistoryRange.MAX, modifier = Modifier.weight(1f)) {
+                range = HistoryRange.MAX
+                viewModel.loadEntries(HistoryRange.MAX)
+            }
+            FilterButton("30d", range == HistoryRange.DAYS_30, modifier = Modifier.weight(1f)) {
+                range = HistoryRange.DAYS_30
+                viewModel.loadEntries(HistoryRange.DAYS_30)
+            }
+            FilterButton("5d", range == HistoryRange.DAYS_5, modifier = Modifier.weight(1f)) {
+                range = HistoryRange.DAYS_5
+                viewModel.loadEntries(HistoryRange.DAYS_5)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        HistoryChart(entries)
 
         Spacer(modifier = Modifier.height(16.dp))
 

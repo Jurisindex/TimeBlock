@@ -3,7 +3,11 @@ package com.example.timeblock.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import android.content.Context
 import com.example.timeblock.data.Repository
+import com.example.timeblock.data.Settings
+import com.example.timeblock.data.SettingsDataStore
+import com.example.timeblock.data.ThemeMode
 import com.example.timeblock.data.entity.Entry
 import com.example.timeblock.data.entity.User
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,7 +15,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class MainViewModel(private val repository: Repository) : ViewModel() {
+class MainViewModel(
+    private val repository: Repository,
+    private val settingsStore: SettingsDataStore
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow<UiState>(UiState.Loading)
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
@@ -28,11 +35,15 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
     private val _isSettings = MutableStateFlow(false)
     val isSettings: StateFlow<Boolean> = _isSettings.asStateFlow()
 
-    private val _allEntries = MutableStateFlow<List<Entry>>(emptyList())
-    val allEntries: StateFlow<List<Entry>> = _allEntries.asStateFlow()
+
+    private val _settings = MutableStateFlow(Settings())
+    val settings: StateFlow<Settings> = _settings.asStateFlow()
 
     init {
         checkUserStatus()
+        viewModelScope.launch {
+            settingsStore.settingsFlow.collect { _settings.value = it }
+        }
     }
 
     private fun checkUserStatus() {
@@ -83,10 +94,7 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
     }
 
     fun viewHistory() {
-        viewModelScope.launch {
-            _allEntries.value = repository.getAllEntries()
-            _isHistory.value = true
-        }
+        _isHistory.value = true
     }
 
     fun exitHistory() {
@@ -108,6 +116,30 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
         }
     }
 
+    fun setTheme(mode: ThemeMode) {
+        viewModelScope.launch { settingsStore.setTheme(mode) }
+    }
+
+    fun setGarminEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsStore.setGarminEnabled(enabled) }
+    }
+
+    fun setWordleShare(enabled: Boolean) {
+        viewModelScope.launch { settingsStore.setWordleShare(enabled) }
+    }
+
+    fun exportDatabase(context: Context) {
+        val dest = java.io.File(context.getExternalFilesDir(null), "timeblock_export.db")
+        com.example.timeblock.util.exportDatabase(context, dest)
+    }
+
+    fun importDatabase(context: Context) {
+        val src = java.io.File(context.getExternalFilesDir(null), "timeblock_export.db")
+        if (src.exists()) {
+            com.example.timeblock.util.importDatabase(context, src)
+        }
+    }
+
     sealed class UiState {
         object Loading : UiState()
         object NeedsUser : UiState()
@@ -118,11 +150,14 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
         PROTEIN, VEGETABLES, STEPS
     }
 
-    class MainViewModelFactory(private val repository: Repository) : ViewModelProvider.Factory {
+    class MainViewModelFactory(
+        private val repository: Repository,
+        private val settingsStore: SettingsDataStore
+    ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
                 @Suppress("UNCHECKED_CAST")
-                return MainViewModel(repository) as T
+                return MainViewModel(repository, settingsStore) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }
