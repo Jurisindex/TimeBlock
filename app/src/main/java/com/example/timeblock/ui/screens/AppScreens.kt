@@ -820,12 +820,13 @@ fun HistoryScreen(
         }
 
         ExtendedFloatingActionButton(
-            text = { Text("\uD83D\uDCC8 Line Graphs") },
             onClick = onShowGraphs,
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(16.dp)
-        ) {}
+        ) {
+            Text(text = "\uD83D\uDCC8 Line Graphs")
+        }
 
         FloatingActionButton(
             onClick = { showPicker = true },

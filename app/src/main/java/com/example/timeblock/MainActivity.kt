@@ -21,6 +21,7 @@ import com.example.timeblock.ui.screens.UserSetupScreen
 import com.example.timeblock.ui.screens.HistoryScreen
 import com.example.timeblock.ui.screens.SettingsScreen
 import com.example.timeblock.ui.HistoryViewModel
+import com.example.timeblock.ui.screens.LineGraphScreen
 import com.example.timeblock.ui.theme.TimeBlockTheme
 
 class MainActivity : ComponentActivity() {
