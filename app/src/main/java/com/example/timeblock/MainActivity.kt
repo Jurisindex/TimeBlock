@@ -10,7 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.ViewModelProvider
 import com.example.timeblock.data.AppDatabase
 import com.example.timeblock.data.Repository
 import com.example.timeblock.ui.MainViewModel
@@ -23,12 +23,16 @@ import com.example.timeblock.ui.HistoryViewModel
 import com.example.timeblock.ui.theme.TimeBlockTheme
 
 class MainActivity : ComponentActivity() {
+
+    private lateinit var viewModel: MainViewModel
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val database = AppDatabase.getDatabase(applicationContext)
         val repository = Repository(database.userDao(), database.entryDao())
         val viewModelFactory = MainViewModel.MainViewModelFactory(repository)
+        viewModel = ViewModelProvider(this, viewModelFactory)[MainViewModel::class.java]
         val historyFactory = HistoryViewModel.HistoryViewModelFactory(repository)
 
         setContent {
@@ -41,6 +45,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.refreshForDateChange()
     }
 }
 
