@@ -4,9 +4,30 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
+import java.util.Properties
+import java.io.FileInputStream
+
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties()
+if (keystorePropertiesFile.exists()) {
+    FileInputStream(keystorePropertiesFile).use { keystoreProperties.load(it) }
+}
+
 android {
     namespace = "com.example.timeblock"
     compileSdk = 34
+
+    signingConfigs {
+        create("release") {
+            val storeFilePath = keystoreProperties["storeFile"] as String?
+            if (storeFilePath != null) {
+                storeFile = file(storeFilePath)
+            }
+            storePassword = keystoreProperties["storePassword"] as String?
+            keyAlias = keystoreProperties["keyAlias"] as String?
+            keyPassword = keystoreProperties["keyPassword"] as String?
+        }
+    }
 
     defaultConfig {
         applicationId = "com.example.timeblock"
@@ -23,6 +44,7 @@ android {
 
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
