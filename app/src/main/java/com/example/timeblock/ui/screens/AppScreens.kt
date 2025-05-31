@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.*
@@ -507,6 +508,78 @@ fun WeightDialog(onDismiss: () -> Unit, onSet: (String) -> Unit) {
 }
 
 @Composable
+fun EditEntryDialog(
+    entry: Entry,
+    onDismiss: () -> Unit,
+    onSave: (protein: Int, vegetables: Int, steps: Int) -> Unit
+) {
+    var proteinValue by remember { mutableStateOf(entry.proteinGrams.toString()) }
+    var vegValue by remember { mutableStateOf(entry.vegetableServings.toString()) }
+    var stepsValue by remember { mutableStateOf(entry.steps.toString()) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text(text = "Edit Entry", style = MaterialTheme.typography.headlineSmall)
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = proteinValue,
+                    onValueChange = { if (it.all { c -> c.isDigit() }) proteinValue = it },
+                    label = { Text("Protein (g)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = vegValue,
+                    onValueChange = { if (it.all { c -> c.isDigit() }) vegValue = it },
+                    label = { Text("Veggies") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = stepsValue,
+                    onValueChange = { if (it.all { c -> c.isDigit() }) stepsValue = it },
+                    label = { Text("Steps") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    Button(onClick = {
+                        onSave(
+                            proteinValue.toIntOrNull() ?: entry.proteinGrams,
+                            vegValue.toIntOrNull() ?: entry.vegetableServings,
+                            stepsValue.toIntOrNull() ?: entry.steps
+                        )
+                    }) {
+                        Text("OK")
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Button(onClick = onDismiss, colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )) {
+                        Text("Cancel")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun SettingsScreen(user: User, onSave: (String, String) -> Unit, onBack: () -> Unit) {
     var name by remember { mutableStateOf(user.displayName) }
     var weightVal by remember { mutableStateOf(user.weight.takeWhile { it.isDigit() || it == '.' }) }
@@ -606,6 +679,7 @@ fun HistoryScreen(viewModel: HistoryViewModel, weight: String, onBack: () -> Uni
     val entries by viewModel.entries.collectAsState()
     var range by remember { mutableStateOf(HistoryRange.MAX) }
     var showPicker by remember { mutableStateOf(false) }
+    var editingEntry by remember { mutableStateOf<Entry?>(null) }
     val context = LocalContext.current
 
     if (showPicker) {
@@ -680,10 +754,19 @@ fun HistoryScreen(viewModel: HistoryViewModel, weight: String, onBack: () -> Uni
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = "Protein: ${entry.proteinGrams}g, Veggies: ${entry.vegetableServings}, Steps: ${entry.steps}",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Protein: ${entry.proteinGrams}g, Veggies: ${entry.vegetableServings}, Steps: ${entry.steps}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                IconButton(onClick = { editingEntry = entry }) {
+                                    Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit")
+                                }
+                            }
                             Spacer(modifier = Modifier.height(4.dp))
                             val ldt = entry.timeCreated
                                 .toKotlinInstant()
@@ -736,6 +819,17 @@ fun HistoryScreen(viewModel: HistoryViewModel, weight: String, onBack: () -> Uni
                 .padding(16.dp)
         ) {
             Icon(imageVector = Icons.Default.Add, contentDescription = "Add")
+        }
+
+        if (editingEntry != null) {
+            EditEntryDialog(
+                entry = editingEntry!!,
+                onDismiss = { editingEntry = null },
+                onSave = { p, v, s ->
+                    viewModel.updateEntry(editingEntry!!, p, v, s)
+                    editingEntry = null
+                }
+            )
         }
     }
 }

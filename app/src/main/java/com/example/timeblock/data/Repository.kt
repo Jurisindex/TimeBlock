@@ -96,6 +96,17 @@ class Repository(private val userDao: UserDao, private val entryDao: EntryDao) {
         return updatedEntry
     }
 
+    suspend fun updateEntry(entry: Entry, protein: Int, vegetables: Int, steps: Int): Entry {
+        val updated = entry.copy(
+            proteinGrams = protein,
+            vegetableServings = vegetables,
+            steps = steps,
+            timeModified = Instant.now()
+        )
+        entryDao.insert(updated)
+        return updated
+    }
+
     fun getTodayEntryFlow(): Flow<Entry> = flow {
         emit(getOrCreateTodayEntry())
     }
