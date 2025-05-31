@@ -42,6 +42,13 @@ class HistoryViewModel(private val repository: Repository) : ViewModel() {
         }
     }
 
+    fun updateEntry(entry: Entry, protein: Int, vegetables: Int, steps: Int) {
+        viewModelScope.launch {
+            repository.updateEntry(entry, protein, vegetables, steps)
+            loadEntries(currentRange)
+        }
+    }
+
     class HistoryViewModelFactory(private val repository: Repository) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(HistoryViewModel::class.java)) {
