@@ -19,6 +19,7 @@ import com.example.timeblock.ui.screens.LoadingScreen
 import com.example.timeblock.ui.screens.UserSetupScreen
 import com.example.timeblock.ui.screens.HistoryScreen
 import com.example.timeblock.ui.screens.SettingsScreen
+import com.example.timeblock.ui.HistoryViewModel
 import com.example.timeblock.ui.theme.TimeBlockTheme
 
 class MainActivity : ComponentActivity() {
@@ -32,6 +33,7 @@ class MainActivity : ComponentActivity() {
         val repository = Repository(database.userDao(), database.entryDao())
         val viewModelFactory = MainViewModel.MainViewModelFactory(repository)
         viewModel = ViewModelProvider(this, viewModelFactory)[MainViewModel::class.java]
+        val historyFactory = HistoryViewModel.HistoryViewModelFactory(repository)
 
         setContent {
             TimeBlockTheme {
@@ -39,7 +41,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    TimeBlockApp(viewModel)
+                    TimeBlockApp(viewModelFactory, historyFactory)
                 }
             }
         }
@@ -52,11 +54,15 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun TimeBlockApp(viewModel: MainViewModel) {
+fun TimeBlockApp(
+    viewModelFactory: MainViewModel.MainViewModelFactory,
+    historyFactory: HistoryViewModel.HistoryViewModelFactory
+) {
+    val viewModel: MainViewModel = viewModel(factory = viewModelFactory)
+    val historyViewModel: HistoryViewModel = viewModel(factory = historyFactory)
     val uiState by viewModel.uiState.collectAsState()
     val isHistory by viewModel.isHistory.collectAsState()
     val isSettings by viewModel.isSettings.collectAsState()
-    val allEntries by viewModel.allEntries.collectAsState()
 
     when (uiState) {
         is MainViewModel.UiState.Loading -> {
@@ -77,7 +83,7 @@ fun TimeBlockApp(viewModel: MainViewModel) {
                     onSave = { name, weight -> viewModel.updateUser(user, name, weight); viewModel.closeSettings() },
                     onBack = { viewModel.closeSettings() })
             } else if (isHistory) {
-                HistoryScreen(entries = allEntries, weight = user.weight, onBack = { viewModel.exitHistory() })
+                HistoryScreen(viewModel = historyViewModel, weight = user.weight, onBack = { viewModel.exitHistory() })
             } else {
                 HomeScreen(
                     user = user,

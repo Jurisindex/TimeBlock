@@ -7,6 +7,7 @@ import com.example.timeblock.data.entity.User
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -105,6 +106,12 @@ class Repository(private val userDao: UserDao, private val entryDao: EntryDao) {
 
     fun getAllEntriesFlow(): Flow<List<Entry>> = flow {
         emit(getAllEntries())
+    }
+
+    suspend fun getEntriesSince(days: Long): List<Entry> {
+        val end = Instant.now()
+        val start = end.minus(days, ChronoUnit.DAYS)
+        return entryDao.getEntriesBetween(start, end)
     }
 
 

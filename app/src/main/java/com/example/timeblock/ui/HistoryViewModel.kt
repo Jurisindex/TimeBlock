@@ -10,18 +10,27 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+enum class HistoryRange { MAX, DAYS_30, DAYS_5 }
+
 class HistoryViewModel(private val repository: Repository) : ViewModel() {
 
     private val _entries = MutableStateFlow<List<Entry>>(emptyList())
     val entries: StateFlow<List<Entry>> = _entries.asStateFlow()
 
+    private var currentRange: HistoryRange = HistoryRange.MAX
+
     init {
         loadEntries()
     }
 
-    private fun loadEntries() {
+    fun loadEntries(range: HistoryRange = currentRange) {
         viewModelScope.launch {
-            _entries.value = repository.getAllEntries()
+            currentRange = range
+            _entries.value = when (range) {
+                HistoryRange.MAX -> repository.getAllEntries()
+                HistoryRange.DAYS_30 -> repository.getEntriesSince(30)
+                HistoryRange.DAYS_5 -> repository.getEntriesSince(5)
+            }
         }
     }
 
