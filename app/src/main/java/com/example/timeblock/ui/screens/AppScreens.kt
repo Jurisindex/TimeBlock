@@ -23,7 +23,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import com.example.timeblock.ui.theme.BroccoliGreen
 import com.example.timeblock.ui.theme.SteakRed
-import com.example.timeblock.ui.theme.StepBlack
+import com.example.timeblock.ui.theme.StepBlue
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
@@ -46,6 +46,7 @@ import kotlinx.datetime.toKotlinInstant
 import android.app.DatePickerDialog
 import java.util.Calendar
 import java.time.LocalDate
+import kotlin.math.roundToInt
 
 @Composable
 fun LoadingScreen() {
@@ -688,7 +689,6 @@ fun HistoryScreen(
     onShowGraphs: () -> Unit
 ) {
     val entries by viewModel.entries.collectAsState()
-    var range by remember { mutableStateOf(HistoryRange.MAX) }
     var showPicker by remember { mutableStateOf(false) }
     var editingEntry by remember { mutableStateOf<Entry?>(null) }
     val context = LocalContext.current
@@ -728,26 +728,6 @@ fun HistoryScreen(
                     text = "History",
                     style = MaterialTheme.typography.headlineMedium
                 )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                FilterButton("MAX", range == HistoryRange.MAX, modifier = Modifier.weight(1f)) {
-                    range = HistoryRange.MAX
-                    viewModel.loadEntries(HistoryRange.MAX)
-                }
-                FilterButton("30d", range == HistoryRange.DAYS_30, modifier = Modifier.weight(1f)) {
-                    range = HistoryRange.DAYS_30
-                    viewModel.loadEntries(HistoryRange.DAYS_30)
-                }
-                FilterButton("5d", range == HistoryRange.DAYS_5, modifier = Modifier.weight(1f)) {
-                    range = HistoryRange.DAYS_5
-                    viewModel.loadEntries(HistoryRange.DAYS_5)
-                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -853,6 +833,7 @@ fun HistoryScreen(
 @Composable
 fun LineGraphScreen(viewModel: HistoryViewModel, onBack: () -> Unit) {
     val entries by viewModel.entries.collectAsState()
+    var range by remember { mutableStateOf(HistoryRange.DAYS_5) }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -871,6 +852,26 @@ fun LineGraphScreen(viewModel: HistoryViewModel, onBack: () -> Unit) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterButton("5d", range == HistoryRange.DAYS_5, modifier = Modifier.weight(1f)) {
+                range = HistoryRange.DAYS_5
+                viewModel.loadEntries(HistoryRange.DAYS_5)
+            }
+            FilterButton("30d", range == HistoryRange.DAYS_30, modifier = Modifier.weight(1f)) {
+                range = HistoryRange.DAYS_30
+                viewModel.loadEntries(HistoryRange.DAYS_30)
+            }
+            FilterButton("MAX", range == HistoryRange.MAX, modifier = Modifier.weight(1f)) {
+                range = HistoryRange.MAX
+                viewModel.loadEntries(HistoryRange.MAX)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         LineGraph(entries = entries, modifier = Modifier
             .fillMaxWidth()
             .height(250.dp))
@@ -881,7 +882,7 @@ fun LineGraphScreen(viewModel: HistoryViewModel, onBack: () -> Unit) {
 fun LineGraph(entries: List<Entry>, modifier: Modifier = Modifier) {
     val broccoliGreen = BroccoliGreen
     val steakRed = SteakRed
-    val stepColor = StepBlack
+    val stepColor = StepBlue
     val sorted = entries.sortedBy { it.timeCreated }
     val maxValue = listOf(
         sorted.maxOfOrNull { it.steps } ?: 0,
@@ -890,7 +891,22 @@ fun LineGraph(entries: List<Entry>, modifier: Modifier = Modifier) {
     ).maxOrNull()?.coerceAtLeast(6000) ?: 6000
 
     Column(modifier = modifier) {
-        Canvas(modifier = Modifier.fillMaxWidth().weight(1f)) {
+        Row(modifier = Modifier.weight(1f)) {
+            val step = (maxValue / 4f).roundToInt()
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .padding(end = 4.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                for (i in 4 downTo 0) {
+                    Text(text = "${i * step}", style = MaterialTheme.typography.labelSmall)
+                }
+            }
+
+            Canvas(modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()) {
             if (sorted.isEmpty()) return@Canvas
             val xStep = if (sorted.size > 1) size.width / (sorted.size - 1) else 0f
             val vegPath = Path()
@@ -914,9 +930,10 @@ fun LineGraph(entries: List<Entry>, modifier: Modifier = Modifier) {
                 }
             }
 
-            drawPath(vegPath, color = broccoliGreen, style = Stroke(width = 4f))
-            drawPath(protPath, color = steakRed, style = Stroke(width = 4f))
-            drawPath(stepPath, color = stepColor, style = Stroke(width = 4f))
+            drawPath(vegPath, color = broccoliGreen, style = Stroke(width = 6f))
+            drawPath(protPath, color = steakRed, style = Stroke(width = 6f))
+            drawPath(stepPath, color = stepColor, style = Stroke(width = 6f))
+        }
         }
 
         Row(

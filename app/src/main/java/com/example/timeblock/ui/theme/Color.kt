@@ -12,5 +12,5 @@ val Pink40 = Color(0xFF7D5260)
 
 val BroccoliGreen = Color(0xFF2E8B57)
 val SteakRed = Color(0xFFB22222)
-val StepBlack = Color(0xFF000000)
+val StepBlue = Color(0xFF0000FF)
 

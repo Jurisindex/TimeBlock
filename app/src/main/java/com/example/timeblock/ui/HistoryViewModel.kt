@@ -18,7 +18,7 @@ class HistoryViewModel(private val repository: Repository) : ViewModel() {
     private val _entries = MutableStateFlow<List<Entry>>(emptyList())
     val entries: StateFlow<List<Entry>> = _entries.asStateFlow()
 
-    private var currentRange: HistoryRange = HistoryRange.MAX
+    private var currentRange: HistoryRange = HistoryRange.DAYS_5
 
     init {
         loadEntries()
