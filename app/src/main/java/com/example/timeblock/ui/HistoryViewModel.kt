@@ -25,9 +25,11 @@ class HistoryViewModel(private val repository: Repository) : ViewModel() {
         loadEntries()
     }
 
-    fun loadEntries(range: HistoryRange = _currentRange.value) {
+    fun loadEntries(range: HistoryRange = _currentRange.value, updateCurrentRange: Boolean = true) {
         viewModelScope.launch {
-            _currentRange.value = range
+            if (updateCurrentRange) {
+                _currentRange.value = range
+            }
             val list = when (range) {
                 HistoryRange.MAX -> repository.getAllEntries()
                 HistoryRange.DAYS_30 -> repository.getEntriesSince(30)

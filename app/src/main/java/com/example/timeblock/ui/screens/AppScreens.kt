@@ -729,7 +729,7 @@ fun HistoryScreen(
 ) {
     val entries by viewModel.entries.collectAsState()
     // Always show the full history regardless of previous graph range
-    LaunchedEffect(Unit) { viewModel.loadEntries(HistoryRange.MAX) }
+    LaunchedEffect(Unit) { viewModel.loadEntries(HistoryRange.MAX, updateCurrentRange = false) }
     var showPicker by remember { mutableStateOf(false) }
     var editingEntry by remember { mutableStateOf<Entry?>(null) }
     val context = LocalContext.current
@@ -846,7 +846,10 @@ fun HistoryScreen(
         }
 
         ExtendedFloatingActionButton(
-            onClick = onShowGraphs,
+            onClick = {
+                viewModel.loadEntries(viewModel.currentRange.value, updateCurrentRange = false)
+                onShowGraphs()
+            },
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(16.dp)
