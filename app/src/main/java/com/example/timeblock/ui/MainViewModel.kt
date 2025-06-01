@@ -131,6 +131,13 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
         _isSettings.value = false
     }
 
+    fun importGarminSteps(data: Map<LocalDate, Int>) {
+        viewModelScope.launch {
+            repository.importGarminSteps(data)
+            loadTodayEntry()
+        }
+    }
+
     fun updateUser(user: User, displayName: String, weight: String) {
         viewModelScope.launch {
             val updated = repository.updateUser(user, displayName, weight)

@@ -626,7 +626,12 @@ fun EditEntryDialog(
 }
 
 @Composable
-fun SettingsScreen(user: User, onSave: (String, String) -> Unit, onBack: () -> Unit) {
+fun SettingsScreen(
+    user: User,
+    onSave: (String, String) -> Unit,
+    onBack: () -> Unit,
+    onImportGarmin: () -> Unit
+) {
     var name by remember { mutableStateOf(user.displayName) }
     var weightVal by remember { mutableStateOf(user.weight.takeWhile { it.isDigit() || it == '.' }) }
     var expanded by remember { mutableStateOf(false) }
@@ -692,6 +697,13 @@ fun SettingsScreen(user: User, onSave: (String, String) -> Unit, onBack: () -> U
             },
             modifier = Modifier.fillMaxWidth()
         ) { Text("Save") }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(
+            onClick = onImportGarmin,
+            modifier = Modifier.fillMaxWidth()
+        ) { Text("Import Connected Garmin") }
     }
 }
 
