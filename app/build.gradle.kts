@@ -88,6 +88,9 @@ dependencies {
     implementation(libs.androidx.compose.animation.core)
     implementation(libs.kotlinx.datetime)
 
+    // Networking for Garmin API
+    implementation("com.squareup.okhttp3:okhttp:4.10.0")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

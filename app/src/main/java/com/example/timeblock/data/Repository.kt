@@ -107,6 +107,30 @@ class Repository(private val userDao: UserDao, private val entryDao: EntryDao) {
         return updated
     }
 
+    /**
+     * Apply step counts imported from Garmin to local entries.
+     * Existing entries will have their step counts overwritten while new
+     * entries will be created when necessary.
+     */
+    suspend fun importGarminSteps(steps: Map<LocalDate, Int>) {
+        for ((date, count) in steps) {
+            val startOfDay = date.atStartOfDay(ZoneId.systemDefault()).toInstant()
+            val endOfDay = date.plusDays(1).atStartOfDay(ZoneId.systemDefault())
+                .toInstant().minusMillis(1)
+
+            val existing = entryDao.getEntriesBetween(startOfDay, endOfDay)
+            val entry = if (existing.isNotEmpty()) {
+                existing.first()
+            } else {
+                insertEntryOn(date)
+                entryDao.getEntriesBetween(startOfDay, endOfDay).first()
+            }
+
+            val updated = entry.copy(steps = count, timeModified = Instant.now())
+            entryDao.insert(updated)
+        }
+    }
+
     fun getTodayEntryFlow(): Flow<Entry> = flow {
         emit(getOrCreateTodayEntry())
     }
