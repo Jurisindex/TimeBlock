@@ -97,7 +97,15 @@ fun TimeBlockApp(
                         viewModel.closeSettings()
                     },
                     onBack = { viewModel.closeSettings() },
-                    onImportGarmin = {
+                    onSyncGarmin = {
+                        coroutineScope.launch {
+                            val client = com.example.timeblock.garmin.GarminClient()
+                            val steps = client.fetchSteps()
+                            viewModel.importGarminSteps(steps)
+                            viewModel.updateLastSynced(java.time.Instant.now())
+                        }
+                    },
+                    onManageGarmin = {
                         coroutineScope.launch {
                             val client = com.example.timeblock.garmin.GarminClient()
                             garminDevices = client.fetchDevices()
@@ -133,16 +141,18 @@ fun TimeBlockApp(
                 Dialog(onDismissRequest = { showGarminDialog = false }) {
                     Surface(shape = RoundedCornerShape(8.dp)) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            garminDevices.forEach { Text(it) }
+                            Text("Select Garmin Device")
                             Spacer(modifier = Modifier.height(8.dp))
-                            Button(onClick = {
-                                coroutineScope.launch {
-                                    val client = com.example.timeblock.garmin.GarminClient()
-                                    val steps = client.fetchSteps()
-                                    viewModel.importGarminSteps(steps)
-                                    showGarminDialog = false
-                                }
-                            }) { Text("Import") }
+                            garminDevices.forEach { device ->
+                                Button(
+                                    onClick = {
+                                        viewModel.linkGarminDevice(device)
+                                        showGarminDialog = false
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) { Text(device) }
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
                         }
                     }
                 }

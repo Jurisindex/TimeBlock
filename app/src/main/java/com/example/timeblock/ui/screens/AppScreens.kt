@@ -630,7 +630,8 @@ fun SettingsScreen(
     user: User,
     onSave: (String, String) -> Unit,
     onBack: () -> Unit,
-    onImportGarmin: () -> Unit
+    onSyncGarmin: () -> Unit,
+    onManageGarmin: () -> Unit
 ) {
     var name by remember { mutableStateOf(user.displayName) }
     var weightVal by remember { mutableStateOf(user.weight.takeWhile { it.isDigit() || it == '.' }) }
@@ -698,12 +699,24 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth()
         ) { Text("Save") }
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(text = "Manage Connected Garmin", style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(text = "Device: ${user.garminDeviceId ?: "None"}")
+        user.lastSynced?.let {
+            val ldt = it.toKotlinInstant().toLocalDateTime(TimeZone.currentSystemDefault())
+            val formatted = "%04d-%02d-%02d %02d:%02d".format(ldt.year, ldt.monthNumber, ldt.dayOfMonth, ldt.hour, ldt.minute)
+            Text(text = "Last synced: $formatted")
+        }
+
         Spacer(modifier = Modifier.height(8.dp))
 
-        Button(
-            onClick = onImportGarmin,
-            modifier = Modifier.fillMaxWidth()
-        ) { Text("Import Connected Garmin") }
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Button(onClick = onSyncGarmin, modifier = Modifier.weight(1f)) { Text("Sync") }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(onClick = onManageGarmin, modifier = Modifier.weight(1f)) { Text("Connect Device") }
+        }
     }
 }
 

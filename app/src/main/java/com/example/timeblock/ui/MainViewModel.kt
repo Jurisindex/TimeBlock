@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import java.time.LocalDate
+import java.time.Instant
 import com.example.timeblock.data.Repository
 import com.example.timeblock.data.entity.Entry
 import com.example.timeblock.data.entity.User
@@ -142,6 +143,24 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
         viewModelScope.launch {
             val updated = repository.updateUser(user, displayName, weight)
             _uiState.value = UiState.Ready(updated)
+        }
+    }
+
+    fun linkGarminDevice(id: String) {
+        viewModelScope.launch {
+            val updated = repository.linkGarminDevice(id)
+            if (updated != null) {
+                _uiState.value = UiState.Ready(updated)
+            }
+        }
+    }
+
+    fun updateLastSynced(time: Instant) {
+        viewModelScope.launch {
+            val updated = repository.updateLastSynced(time)
+            if (updated != null) {
+                _uiState.value = UiState.Ready(updated)
+            }
         }
     }
 
