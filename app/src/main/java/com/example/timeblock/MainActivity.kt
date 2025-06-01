@@ -4,12 +4,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.timeblock.data.AppDatabase
@@ -23,6 +26,7 @@ import com.example.timeblock.ui.screens.SettingsScreen
 import com.example.timeblock.ui.HistoryViewModel
 import com.example.timeblock.ui.screens.LineGraphScreen
 import com.example.timeblock.ui.theme.TimeBlockTheme
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -67,6 +71,10 @@ fun TimeBlockApp(
     val isSettings by viewModel.isSettings.collectAsState()
     val isLineGraph by viewModel.isLineGraph.collectAsState()
 
+    var showGarminDialog by remember { mutableStateOf(false) }
+    var garminDevices by remember { mutableStateOf<List<String>>(emptyList()) }
+    val coroutineScope = rememberCoroutineScope()
+
     when (uiState) {
         is MainViewModel.UiState.Loading -> {
             LoadingScreen()
@@ -82,9 +90,21 @@ fun TimeBlockApp(
             val editMode by viewModel.currentEditMode.collectAsState()
 
             if (isSettings) {
-                SettingsScreen(user = user,
-                    onSave = { name, weight -> viewModel.updateUser(user, name, weight); viewModel.closeSettings() },
-                    onBack = { viewModel.closeSettings() })
+                SettingsScreen(
+                    user = user,
+                    onSave = { name, weight ->
+                        viewModel.updateUser(user, name, weight)
+                        viewModel.closeSettings()
+                    },
+                    onBack = { viewModel.closeSettings() },
+                    onImportGarmin = {
+                        coroutineScope.launch {
+                            val client = com.example.timeblock.garmin.GarminClient()
+                            garminDevices = client.fetchDevices()
+                            showGarminDialog = true
+                        }
+                    }
+                )
             } else if (isLineGraph) {
                 LineGraphScreen(viewModel = historyViewModel, onBack = { viewModel.exitLineGraph() })
             } else if (isHistory) {
@@ -107,6 +127,25 @@ fun TimeBlockApp(
                     showWeightPrompt = user.weight == "0",
                     onWeightSet = { weight -> viewModel.updateUser(user, user.displayName, weight) }
                 )
+            }
+
+            if (showGarminDialog) {
+                Dialog(onDismissRequest = { showGarminDialog = false }) {
+                    Surface(shape = RoundedCornerShape(8.dp)) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            garminDevices.forEach { Text(it) }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(onClick = {
+                                coroutineScope.launch {
+                                    val client = com.example.timeblock.garmin.GarminClient()
+                                    val steps = client.fetchSteps()
+                                    viewModel.importGarminSteps(steps)
+                                    showGarminDialog = false
+                                }
+                            }) { Text("Import") }
+                        }
+                    }
+                }
             }
         }
     }
