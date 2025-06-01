@@ -39,19 +39,42 @@ class FakeEntryDao : EntryDao {
 }
 
 class FakeUserDao : UserDao {
-    override suspend fun insert(user: User) {}
-    override suspend fun getAllUsers(): List<User> = emptyList()
-    override suspend fun updateUser(displayName: String, weight: String, timeModified: Instant, userUuid: String) {}
+    var user: User? = null
+
+    override suspend fun insert(user: User) {
+        this.user = user
+    }
+
+    override suspend fun getAllUsers(): List<User> = user?.let { listOf(it) } ?: emptyList()
+
+    override suspend fun updateUser(
+        displayName: String,
+        weight: String,
+        timeModified: Instant,
+        garminDeviceId: String?,
+        lastSynced: Instant?,
+        userUuid: String
+    ) {
+        user = user?.copy(
+            displayName = displayName,
+            weight = weight,
+            timeModified = timeModified,
+            garminDeviceId = garminDeviceId,
+            lastSynced = lastSynced
+        )
+    }
 }
 
 class RepositoryImportGarminStepsTest {
     private lateinit var repository: Repository
     private lateinit var entryDao: FakeEntryDao
+    private lateinit var userDao: FakeUserDao
 
     @Before
     fun setup() {
         entryDao = FakeEntryDao()
-        repository = Repository(FakeUserDao(), entryDao)
+        userDao = FakeUserDao()
+        repository = Repository(userDao, entryDao)
     }
 
     @Test
@@ -74,5 +97,27 @@ class RepositoryImportGarminStepsTest {
         val end = date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().minusMillis(1)
         val entry = entryDao.getEntriesBetween(start, end).first()
         assertEquals(200, entry.steps)
+    }
+
+    @Test
+    fun lastSyncedUpdated() = runBlocking {
+        val now = Instant.now()
+        val user = User(
+            userUuid = "uid",
+            displayName = "Test",
+            weight = "0",
+            timeCreated = now,
+            timeModified = now,
+            garminDeviceId = null,
+            lastSynced = null
+        )
+        userDao.insert(user)
+
+        repository.importGarminSteps(emptyMap())
+        val syncTime = now.plusSeconds(5)
+        repository.updateLastSynced(syncTime)
+
+        val stored = userDao.getAllUsers().first()
+        assertEquals(syncTime, stored.lastSynced)
     }
 }

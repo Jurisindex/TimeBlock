@@ -22,7 +22,9 @@ class Repository(private val userDao: UserDao, private val entryDao: EntryDao) {
             displayName = displayName,
             weight = weight,
             timeCreated = now,
-            timeModified = now
+            timeModified = now,
+            garminDeviceId = null,
+            lastSynced = null
         )
         userDao.insert(user)
         return user
@@ -39,7 +41,48 @@ class Repository(private val userDao: UserDao, private val entryDao: EntryDao) {
             weight = newWeight,
             timeModified = Instant.now()
         )
-        userDao.updateUser(updated.displayName, updated.weight, updated.timeModified, updated.userUuid)
+        userDao.updateUser(
+            updated.displayName,
+            updated.weight,
+            updated.timeModified,
+            updated.garminDeviceId,
+            updated.lastSynced,
+            updated.userUuid
+        )
+        return updated
+    }
+
+    suspend fun linkGarminDevice(id: String): User? {
+        val user = getUser() ?: return null
+        val updated = user.copy(
+            garminDeviceId = id,
+            timeModified = Instant.now()
+        )
+        userDao.updateUser(
+            updated.displayName,
+            updated.weight,
+            updated.timeModified,
+            updated.garminDeviceId,
+            updated.lastSynced,
+            updated.userUuid
+        )
+        return updated
+    }
+
+    suspend fun updateLastSynced(time: Instant): User? {
+        val user = getUser() ?: return null
+        val updated = user.copy(
+            lastSynced = time,
+            timeModified = time
+        )
+        userDao.updateUser(
+            updated.displayName,
+            updated.weight,
+            updated.timeModified,
+            updated.garminDeviceId,
+            updated.lastSynced,
+            updated.userUuid
+        )
         return updated
     }
 

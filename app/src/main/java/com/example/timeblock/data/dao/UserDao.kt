@@ -14,8 +14,15 @@ interface UserDao {
     @Query("SELECT * FROM User")
     suspend fun getAllUsers(): List<User>
 
-    @Query("UPDATE User SET display_name = :displayName, weight = :weight, time_modified = :timeModified WHERE user_uuid = :userUuid")
-    suspend fun updateUser(displayName: String, weight: String, timeModified: java.time.Instant, userUuid: String)
+    @Query("UPDATE User SET display_name = :displayName, weight = :weight, time_modified = :timeModified, garmin_device_id = :garminDeviceId, last_synced = :lastSynced WHERE user_uuid = :userUuid")
+    suspend fun updateUser(
+        displayName: String,
+        weight: String,
+        timeModified: java.time.Instant,
+        garminDeviceId: String?,
+        lastSynced: java.time.Instant?,
+        userUuid: String
+    )
 
     // Add more methods as needed (e.g., update, delete, query by ID)
 }

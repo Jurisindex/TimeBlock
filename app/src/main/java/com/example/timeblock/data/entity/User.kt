@@ -12,5 +12,7 @@ data class User(
     @ColumnInfo(name = "display_name") val displayName: String,
     @ColumnInfo(name = "weight") val weight: String = "0",
     @ColumnInfo(name = "time_created") val timeCreated: Instant,
-    @ColumnInfo(name = "time_modified") val timeModified: Instant
+    @ColumnInfo(name = "time_modified") val timeModified: Instant,
+    @ColumnInfo(name = "garmin_device_id") val garminDeviceId: String? = null,
+    @ColumnInfo(name = "last_synced") val lastSynced: Instant? = null
 )
