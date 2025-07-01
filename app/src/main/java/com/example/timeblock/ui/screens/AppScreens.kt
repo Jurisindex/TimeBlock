@@ -804,12 +804,10 @@ fun HistoryScreen(
                             val ldt = entry.timeCreated
                                 .toKotlinInstant()
                                 .toLocalDateTime(TimeZone.currentSystemDefault())
-                            val formattedDate = "%04d-%02d-%02d %02d:%02d".format(
+                            val formattedDate = "%04d-%02d-%02d".format(
                                 ldt.year,
                                 ldt.monthNumber,
-                                ldt.dayOfMonth,
-                                ldt.hour,
-                                ldt.minute
+                                ldt.dayOfMonth
                             )
                             val clipboard = LocalClipboardManager.current
                             Row(
