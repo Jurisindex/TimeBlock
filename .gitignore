@@ -1,11 +1,6 @@
-*.iml
-.gradle
-/local.properties
-/.idea/
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
-keystore.properties
+/.build
+/.swiftpm
+/XcodePreviews/
+DerivedData/
+
