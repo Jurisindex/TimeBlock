@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.lifecycleScope
 import com.example.timeblock.data.AppDatabase
 import com.example.timeblock.data.Repository
 import com.example.timeblock.ui.MainViewModel
@@ -23,10 +24,14 @@ import com.example.timeblock.ui.screens.SettingsScreen
 import com.example.timeblock.ui.HistoryViewModel
 import com.example.timeblock.ui.screens.LineGraphScreen
 import com.example.timeblock.ui.theme.TimeBlockTheme
+import com.example.timeblock.util.GarminHealthConnectStepsProvider
+import com.example.timeblock.util.StepCountProvider
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var viewModel: MainViewModel
+    private lateinit var stepCountProvider: StepCountProvider
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,6 +41,7 @@ class MainActivity : ComponentActivity() {
         val viewModelFactory = MainViewModel.MainViewModelFactory(repository)
         viewModel = ViewModelProvider(this, viewModelFactory)[MainViewModel::class.java]
         val historyFactory = HistoryViewModel.HistoryViewModelFactory(repository)
+        stepCountProvider = GarminHealthConnectStepsProvider(this)
 
         setContent {
             TimeBlockTheme {
@@ -52,6 +58,12 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.refreshForDateChange()
+        lifecycleScope.launch {
+            val steps = stepCountProvider.getTodaySteps().toInt()
+            if (steps > 0) {
+                viewModel.updateValue(steps, isAddition = false)
+            }
+        }
     }
 }
 
